@@ -1,0 +1,11 @@
+env: local
+swagger:
+  enabled: true
+
+microservice:
+  appOpts: --spring.profiles.active=local --spring.config.additional-location=file:///app/config/application-local.yml
+  javaOpts: -Dnewrelic.environment=local -javaagent:/usr/local/newrelic/newrelic.jar
+  ingress:
+    host: food-query.local
+    tls:
+      enabled: false

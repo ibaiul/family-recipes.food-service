@@ -1,0 +1,8 @@
+management:
+  health:
+    database:
+      enabled: true
+      interval: 1
+    event-store:
+      enabled: true
+      interval: 1

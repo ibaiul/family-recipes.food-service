@@ -1,0 +1,208 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.6.1
+
+      - name: Set up variables
+        run: |
+          if [ ${{ github.ref }} == 'refs/heads/master' ]; then
+            echo "RELEASE_TAG=latest" >> $GITHUB_ENV
+            echo "SNYK_ACTION=monitor" >> $GITHUB_ENV
+            echo "SNYK_IAC_ARGS=--report --target-name=${{ vars.SNYK_PROJECT }}-iac" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=beta" >> $GITHUB_ENV
+            echo "SNYK_ACTION=test" >> $GITHUB_ENV
+            echo "SNYK_IAC_ARGS=" >> $GITHUB_ENV
+          fi
+
+      - name: Test
+        run: |
+          ./gradlew testAggregateCoverage
+
+      - name: Archive Test Report
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: junit-test-results
+          path: |
+            **/build/test-results/test/TEST-*.xml
+            **/reports/tests/
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          junit_files: "**/build/test-results/test/**/*.xml"
+          comment_mode: off
+
+      - name: Sonar
+        run: |
+          BRANCH_NAME=$(echo ${GITHUB_REF} | sed 's/refs\///g' | sed 's/heads\///g' | sed 's/\/merge//g' | sed 's/pull\//PR-/g')
+          ./gradlew sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }} -Dsonar.branch.name=${BRANCH_NAME} -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} -Dsonar.projectKey=${{ vars.SONAR_PROJECT }}
+
+      - name: Package (query)
+        run: ./gradlew food-service-read-model:bootJar
+
+      - name: Package (command)
+        run: ./gradlew food-service-write-model:bootJar
+
+      - name: Scan Dependencies
+        uses: snyk/actions/gradle-jdk17@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          JAVA_HOME: /opt/java/openjdk
+        with:
+          args: --severity-threshold=high --policy-path=. --org=${{ vars.SNYK_ORGANIZATION }} --all-projects
+          command: ${{ env.SNYK_ACTION }}
+
+      - name: Build Docker image (query)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          build-args: MODULE_NAME=read-model
+          tags: |
+            ${{ vars.GH_IMAGE_QUERY }}:${{ github.sha }}
+            ${{ vars.GH_IMAGE_QUERY }}:${{ env.RELEASE_TAG }}
+          load: true
+
+      - name: Scan Docker image (query)
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ vars.GH_IMAGE_QUERY }}:${{ github.sha }}
+          args: --file=Dockerfile --severity-threshold=high --policy-path=. --project-name=${{ vars.SNYK_PROJECT }}-docker --org=${{ vars.SNYK_ORGANIZATION }}
+          command: ${{ env.SNYK_ACTION }}
+
+      - name: Build Docker image (command)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          build-args: MODULE_NAME=write-model
+          tags: |
+            ${{ vars.GH_IMAGE_COMMAND }}:${{ github.sha }}
+            ${{ vars.GH_IMAGE_COMMAND }}:${{ env.RELEASE_TAG }}
+          load: true
+
+      - name: Scan Docker image (command)
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ vars.GH_IMAGE_COMMAND }}:${{ github.sha }}
+          args: --file=Dockerfile --severity-threshold=high --policy-path=. --project-name=${{ vars.SNYK_PROJECT }}-docker --org=${{ vars.SNYK_ORGANIZATION }}
+          command: ${{ env.SNYK_ACTION }}
+
+      - name: Install Helm
+        uses: Azure/setup-helm@v3
+        with:
+          version: 3.11.3
+
+      - name: Set up Helm
+        run: |
+          helm version
+          helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
+          wget https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb
+          sudo dpkg -i sops_3.7.3_amd64.deb
+
+      - name: Set up GPG
+        run : |
+          gpg --version
+          echo -n "${{ secrets.GPG_KEY }}" | base64 --decode | gpg --import
+          gpg --list-secret-keys
+
+      - name: Package Helm chart (query)
+        env:
+          APP_VERSION: ${{ github.sha }}
+        run: |
+          cd helm
+          sed -r "s/^(\s*tag\s*:\s*).*/\1${APP_VERSION}/" -i food-service-query/values.yaml
+          CHART_VERSION=$(sed -nr 's/^version\s*:\s*(\S*)$/\1/p' food-service-query/Chart.yaml)
+          CHART_VERSION+="-${APP_VERSION}"
+          helm package ./food-service-query --version=${CHART_VERSION} --app-version ${APP_VERSION} --dependency-update
+          helm secrets template ./food-service-query -f food-service-query/envs/local/values.yaml -f food-service-query/envs/local/secrets.yaml --output-dir out/food-service-query/local
+          helm secrets template ./food-service-query -f food-service-query/envs/ppe/values.yaml -f food-service-query/envs/ppe/secrets.yaml --output-dir out/food-service-query/ppe
+          helm secrets template ./food-service-query -f food-service-query/envs/prod/values.yaml -f food-service-query/envs/prod/secrets.yaml --output-dir out/food-service-query/prod
+
+      - name: Scan Helm chart (query)
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --policy-path=. --org=${{ vars.SNYK_ORGANIZATION }} ${{ env.SNYK_IAC_ARGS }}
+          file: helm/out/food-service-query
+          command: test
+
+      - name: Package Helm chart (command)
+        env:
+          APP_VERSION: ${{ github.sha }}
+        run: |
+          cd helm
+          sed -r "s/^(\s*tag\s*:\s*).*/\1${APP_VERSION}/" -i food-service-command/values.yaml
+          CHART_VERSION=$(sed -nr 's/^version\s*:\s*(\S*)$/\1/p' food-service-command/Chart.yaml)
+          CHART_VERSION+="-${APP_VERSION}"
+          helm package ./food-service-command --version=${CHART_VERSION} --app-version ${APP_VERSION} --dependency-update
+          helm secrets template ./food-service-command -f food-service-command/envs/local/values.yaml -f food-service-command/envs/local/secrets.yaml --output-dir out/food-service-command/local
+          helm secrets template ./food-service-command -f food-service-command/envs/ppe/values.yaml -f food-service-command/envs/ppe/secrets.yaml --output-dir out/food-service-command/ppe
+          helm secrets template ./food-service-command -f food-service-command/envs/prod/values.yaml -f food-service-command/envs/prod/secrets.yaml --output-dir out/food-service-command/prod
+
+      - name: Scan Helm chart (command)
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --policy-path=. --org=${{ secrets.SNYK_ORGANIZATION }} ${{ env.SNYK_IAC_ARGS }}
+          file: helm/out/food-service-command
+          command: test
+
+      - name: Login to GitHub CR
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GH_USER }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Publish (query)
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+        run: docker push ${{ vars.GH_IMAGE_QUERY }} -a
+
+      - name: Docker Publish (command)
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+        run: docker push ${{ vars.GH_IMAGE_COMMAND }} -a
+
+      - name: Push Helm chart (query)
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+        run: |
+          CHART_NAME=$(find ./helm -name "family-recipes.food-service.query*.tgz" -printf "%f\n")
+          helm push helm/${CHART_NAME} oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Push Helm chart (command)
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+        run: |
+          CHART_NAME=$(find ./helm -name "family-recipes.food-service.command*.tgz" -printf "%f\n")
+          helm push helm/${CHART_NAME} oci://ghcr.io/${{ github.repository_owner }}/charts

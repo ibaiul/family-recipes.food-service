@@ -1,0 +1,88 @@
+jwt:
+  access-token:
+    expiration-time: 1
+  refresh-token:
+    expiration-time: 2
+  signature:
+    secret: ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
+  encryption:
+    secret: ABCDEF0123456789ABCDEF0123456789
+
+users:
+  - username: user1
+    password: $2a$10$jw9IHXo.Bnm6yyZ0ggR2zut300ZYfA9b5zyhmfVI6p6YzJdZp6SqO
+    roles:
+      - USER
+  - username: user2
+    password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
+    roles:
+      - USER
+      - ADMIN
+
+newrelic:
+  enabled: false
+  app:
+    name: Family Recipes - Food Service - test - Micrometer
+  metrics:
+    step: 60
+    ingest-uri: http://localhost:xxxx/metric/v1
+  keys:
+    license: licenseKey
+
+management:
+  health:
+    probes:
+      enabled: true
+    database:
+      enabled: false
+      interval: 60
+    event-source:
+      enabled: false
+      interval: 60
+    r2dbc:
+      enabled: false
+    db:
+      enabled: false
+    diskSpace:
+      enabled: false
+    ping:
+      enabled: false
+  endpoint:
+    info:
+      enabled: true
+    health:
+      show-components: always
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  metrics:
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+            percentiles: 0.95,0.99
+    exclude:
+      - executor
+      - hikaricp
+      - jvm
+      - logback
+      - process
+      - r2dbc
+      - spring
+  observations:
+    exclude:
+      - spring.security
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  webjars:
+    prefix:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

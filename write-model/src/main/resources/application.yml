@@ -1,0 +1,130 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/local-command-db
+    username: sa
+    password: sa
+    driverClassName: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      format_sql: true
+      show_sql: true
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  flyway:
+    url: jdbc:postgresql://localhost:5432/local-command-db
+    user: sa
+    password: sa
+    locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+
+axon:
+  serializer:
+    general: jackson
+    events: jackson
+    messages: jackson
+  axonserver:
+      enabled: false
+  eventhandling:
+    processors:
+      constraint-event-processor:
+        mode: subscribing
+
+jwt:
+  access-token:
+    expiration-time: 300
+  refreshToken:
+    expiration-time: 604800
+  signature:
+    secret: ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
+  encryption:
+    secret: ABCDEF0123456789ABCDEF0123456789
+
+users:
+  - username: user1
+    password: $2a$10$jw9IHXo.Bnm6yyZ0ggR2zut300ZYfA9b5zyhmfVI6p6YzJdZp6SqO
+    roles:
+      - USER
+  - username: user2
+    password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
+    roles:
+      - USER
+      - ADMIN
+
+newrelic:
+  enabled: true
+  app:
+    name: Family Recipes - Food Command - local - Micrometer
+  metrics:
+    step: 60
+    ingest-uri: http://localhost:18080/metric/v1
+  keys:
+    license: licenseKey
+
+management:
+  health:
+    probes:
+      enabled: true
+    database:
+      enabled: false
+      interval: 60
+    event-store:
+      enabled: true
+      interval: 60
+    r2dbc:
+      enabled: false
+      interval: 60
+    db:
+      enabled: false
+    diskSpace:
+      enabled: false
+    ping:
+      enabled: false
+  endpoint:
+    info:
+      enabled: true
+    health:
+      show-components: always
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  metrics:
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+            percentiles: 0.95,0.99
+    exclude:
+      - executor
+      - hikaricp
+      - jvm
+      - logback
+      - process
+      - r2dbc
+      - spring
+  observations:
+    exclude:
+      - spring.security
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Family Recipes
+    description: Recipe book that also tracks what family members eat
+    service: Food Service (Command side)
+    version: 1.0.0
+
+springdoc:
+  webjars:
+    prefix:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

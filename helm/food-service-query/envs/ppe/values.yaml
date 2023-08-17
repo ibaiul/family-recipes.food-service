@@ -1,0 +1,10 @@
+env: ppe
+swagger:
+  enabled: true
+
+newrelic:
+  appName: Family Recipes - Food Query - PPE - Micrometer
+
+microservice:
+  appOpts: --spring.profiles.active=ppe --spring.config.additional-location=file:///app/config/application-ppe.yml
+  javaOpts: -Dnewrelic.environment=ppe -javaagent:/usr/local/newrelic/newrelic.jar

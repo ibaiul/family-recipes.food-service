@@ -1,0 +1,15 @@
+newrelic:
+  appName: Family Recipes - Food Command - local - Micrometer
+swagger:
+  enabled: false
+
+microservice:
+  service:
+    port: 8080
+
+global:
+  fullnameOverride: &serviceName food-service-command
+  nameOverride: *serviceName
+  image:
+    repository: ghcr.io/ibaiul/family-recipes.food-service.command
+    tag: "beta"

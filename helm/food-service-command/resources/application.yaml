@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: ${COMMAND_DB_URL}
+    username: ${COMMAND_DB_USER}
+    password: ${COMMAND_DB_PASS}
+  flyway:
+    url: ${COMMAND_DB_URL}
+    user: ${COMMAND_DB_USER}
+    password: ${COMMAND_DB_PASS}
+
+jwt:
+  signature:
+    secret: ${JWT_SECRET_SIGN}
+  encryption:
+    secret: ${JWT_SECRET_ENC}
+
+users:
+  - username: ${IN_MEMORY_USER_NAME_1}
+    password: ${IN_MEMORY_USER_PASS_1}
+    roles:
+      - USER
+      - ADMIN
+  - username: ${IN_MEMORY_USER_NAME_2}
+    password: ${IN_MEMORY_USER_PASS_2}
+    roles:
+      - USER
+
+newrelic:
+  app:
+    name: NEWRELIC_APP_NAME
+  metrics:
+    step: 60
+    ingest-uri: ${NEW_RELIC_METRIC_INGEST_URI}
+  keys:
+    license: ${NEW_RELIC_LICENSE_KEY}
+
+springdoc:
+  api-docs:
+    enabled: SWAGGER_ENABLED
+  swagger-ui:
+    enabled: SWAGGER_ENABLED

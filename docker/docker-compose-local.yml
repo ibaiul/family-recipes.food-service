@@ -1,0 +1,84 @@
+version: "3.7"
+
+services:
+
+  db:
+    container_name: family-recipes-db
+    image: postgres:13.8
+    restart: always
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES="local-command-db","local-query-db"
+      - POSTGRES_USER=sa
+      - POSTGRES_PASSWORD=sa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/data/db
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - family-recipes-net
+
+  write-model:
+    container_name: food-service-write-model
+    image: ibaiul/family-recipes:food-service-write-model-local
+    pull_policy: always
+    env_file: env.conf
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - wiremock
+    networks:
+      - family-recipes-net
+
+  read-model:
+    container_name: food-service-read-model
+    image: ibaiul/family-recipes:food-service-read-model-local
+    pull_policy: always
+    env_file: env.conf
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+      - wiremock
+    networks:
+      - family-recipes-net
+
+  db-ui:
+    container_name: family-recipes-db-ui
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/data/pgadmin
+    depends_on:
+      - db
+    logging:
+      driver: none
+    networks:
+      - family-recipes-net
+
+  wiremock:
+    container_name: food-service-wiremock
+    image: wiremock/wiremock:2.35.0
+    ports:
+      - "18080:8080"
+    command: "--global-response-templating --verbose"
+    volumes:
+      - ./wiremock:/home/wiremock
+    networks:
+      - family-recipes-net
+
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  family-recipes-net:
+    name: family-recipes-net
+    driver: bridge

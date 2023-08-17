@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version "$springBootVersion"
+    id 'jacoco'
+    id 'jacoco-report-aggregation'
+    id 'com.gorylenko.gradle-git-properties' version "$gitPropertiesVersion"
+    id 'org.sonarqube' version "$sonarVersion"
+}
+
+group 'eus.ibai.family-recipes'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: "java"
+    apply plugin: "org.springframework.boot"
+    apply plugin: "jacoco"
+    apply plugin: "com.gorylenko.gradle-git-properties"
+    apply plugin: "org.sonarqube"
+
+    dependencies {
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+
+        implementation "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
+        implementation "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
+        implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+        implementation "org.hibernate.validator:hibernate-validator:$hiberateValidatorVersion"
+        implementation "io.micrometer:micrometer-core:$micrometerVersion"
+        implementation "io.opentelemetry:opentelemetry-sdk:$openTelemetryVersion"
+        implementation "io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5:$openTelemetryVersion-alpha"
+        implementation "io.opentelemetry:opentelemetry-exporter-otlp:$openTelemetryVersion"
+        implementation "com.newrelic.telemetry:telemetry-core:$newrelicTelemetryVersion"
+        implementation "com.newrelic.telemetry:telemetry-http-okhttp:$newrelicTelemetryVersion"
+        implementation "com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion"
+        implementation "org.springdoc:springdoc-openapi-starter-webflux-ui:$springDocVersion"
+
+
+        // Version fixes for transient dependencies with vulnerabilities
+        // SNYK-JAVA-ORGYAML-3152153
+        implementation "org.yaml:snakeyaml:2.0"
+        // SNYK-JAVA-COMSQUAREUPOKIO-5773320 -> Waiting for okhttp +4.11.0 to include okio +3.4.0
+        implementation "com.squareup.okio:okio:$okioVersion"
+        // SNYK-JAVA-COMSQUAREUPOKIO-5820002 -> Waiting for okhttp +4.11.0 to include okio-jvm +3.4.0
+        implementation "com.squareup.okio:okio-jvm:$okioVersion"
+
+        testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+        testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+        testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion") {
+            exclude group: "com.vaadin.external.google", module:"android-json"
+        }
+        testImplementation "io.projectreactor:reactor-test:$reactorVersion"
+        testImplementation "org.awaitility:awaitility:$awaitilityVersion"
+        testImplementation "com.github.tomakehurst:wiremock-standalone:$wiremockVersion"
+    }
+
+    springBoot {
+        buildInfo()
+    }
+
+    test {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            csv.required = false
+            html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+        }
+    }
+
+    tasks.named('check') {
+        dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
+    }
+
+    sonarqube {
+        properties {
+            property "sonar.host.url", "https://sonarcloud.io"
+            property "sonar.coverage.jacoco.xmlReportPaths", "../build/reports/jacoco/testAggregateCoverage/testAggregateCoverage.xml"
+        }
+    }
+}
+
+jacoco {
+    toolVersion = "$jacocoVersion"
+}
+
+task testAggregateCoverage(type: JacocoReport, group: 'Coverage reports') {
+    description = 'Generates an aggregate report from all subprojects'
+    dependsOn(subprojects.test)
+
+    additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(subprojects.sourceSets.main.output)
+    executionData.from = files(subprojects.jacocoTestReport.executionData)
+
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
+sonarqube {
+    properties {
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/testAggregateCoverage/testAggregateCoverage.xml"
+    }
+}

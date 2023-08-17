@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/metric/v1",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json; charset=UTF-8"
+      }
+    }
+  },
+  "response": {
+    "status": 202,
+    "jsonBody": {
+      "requestId": "00000000-0000-0000-0000-000000000000"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

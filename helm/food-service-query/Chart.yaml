@@ -1,0 +1,12 @@
+apiVersion: v2
+name: family-recipes.food-service.query
+description: Query side of the Food Service in Family Recipes app
+
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: microservice
+    repository: file://../microservice
+    version: 0.1.0

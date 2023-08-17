@@ -1,0 +1,10 @@
+ignore:
+  SNYK-JAVA-IONETTY-1042268:
+    - '*':
+      reason: 'Not affected as Reactor Netty has explicitly enabled hostname verification by default.'
+  SNYK-JAVA-COMH2DATABASE-31685:
+    - '*':
+      reason: 'Not affected as the web console is not accessible. Also, it is a test dependency that is not deployed in any environment.'
+  SNYK-JAVA-COMH2DATABASE-3146851:
+    - '*':
+      reason: 'Not affected as the web console is not accessible. Also, it is a test dependency that is not deployed in any environment.'

@@ -1,0 +1,67 @@
+replicaCount: 2
+
+image:
+  repository: "replace-me"
+  pullPolicy: Always
+  tag: "replace-me"
+
+imagePullSecrets: []
+nameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+  imagePullSecrets: true
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+   capabilities:
+     drop:
+     - ALL
+   readOnlyRootFilesystem: true
+   runAsNonRoot: true
+   runAsUser: 10001
+   allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  host: microservice.local
+  path: /
+  pathType: Prefix
+  tls:
+    enabled: true
+    secretName: letsencrypt
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

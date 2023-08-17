@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/local-command-db
+  flyway:
+    url: jdbc:postgresql://db:5432/local-command-db
+
+newrelic:
+  metrics:
+    ingest-uri: http://wiremock:8080/metric/v1
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: microservice
+description: Microservice template
+
+type: application
+version: 0.1.0

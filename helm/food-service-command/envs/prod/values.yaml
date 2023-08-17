@@ -1,0 +1,8 @@
+env: prod
+
+newrelic:
+  appName: Family Recipes - Food Command - Micrometer
+
+microservice:
+  appOpts: --spring.profiles.active=prod --spring.config.additional-location=file:///app/config/application-prod.yml
+  javaOpts: -Dnewrelic.environment=prod -javaagent:/usr/local/newrelic/newrelic.jar

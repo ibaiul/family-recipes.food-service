@@ -1,0 +1,17 @@
+plugins {
+    id 'java-test-fixtures'
+}
+
+group 'eus.ibai.family.recipes'
+version '1.0-SNAPSHOT'
+
+dependencies {
+    implementation "io.r2dbc:r2dbc-spi:$r2dbcVersion"
+    implementation "org.springframework:spring-jdbc:$springVersion"
+
+    testFixturesImplementation "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
+    testFixturesImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion") {
+        exclude group: "com.vaadin.external.google", module:"android-json"
+    }
+    testFixturesImplementation "com.github.tomakehurst:wiremock-standalone:$wiremockVersion"
+}

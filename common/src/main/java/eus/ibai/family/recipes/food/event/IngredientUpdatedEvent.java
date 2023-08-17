@@ -1,0 +1,3 @@
+package eus.ibai.family.recipes.food.event;
+
+public record IngredientUpdatedEvent(String aggregateId, String ingredientName) implements DomainEvent<String> {}

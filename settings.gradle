@@ -1,0 +1,5 @@
+include 'common'
+include 'write-model'
+project( ':write-model' ).name = 'food-service-write-model'
+include 'read-model'
+project( ':read-model' ).name = 'food-service-read-model'

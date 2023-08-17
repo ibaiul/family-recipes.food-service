@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "microservice.fullname" . }}-application-properties
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
+data:
+  application-{{ .Values.env }}.yml: |
+{{ .Files.Get "resources/application.yaml" | indent 4 | replace "NEWRELIC_APP_NAME" .Values.newrelic.appName | replace "SWAGGER_ENABLED" ( toString .Values.swagger.enabled ) }}

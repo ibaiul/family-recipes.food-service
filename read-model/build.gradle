@@ -1,0 +1,23 @@
+group 'eus.ibai.family-recipes'
+version '1.0-SNAPSHOT'
+
+dependencies {
+    implementation project(":common")
+
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    implementation ("org.axonframework:axon-spring-boot-starter:$axonVersion") {
+        exclude group:"org.axonframework", module:"axon-server-connector"
+    }
+    implementation "org.axonframework.extensions.reactor:axon-reactor-spring-boot-starter:$axonVersion"
+    runtimeOnly "org.postgresql:postgresql:$postgresqlVersion"
+    implementation "org.flywaydb:flyway-core:$flywayVersion"
+
+    implementation "org.springframework.boot:spring-boot-starter-data-r2dbc:$springBootVersion"
+    runtimeOnly "org.postgresql:r2dbc-postgresql:$postgresqlR2dbcVersion"
+
+    testImplementation(testFixtures(project(":common")))
+
+    implementation "org.axonframework:axon-test:$axonVersion"
+    testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
+    testImplementation "io.r2dbc:r2dbc-h2:$h2Version"
+}
