@@ -15,4 +15,8 @@ public interface RecipeService {
     Mono<String> addRecipeIngredient(String recipeId, String ingredientName);
 
     Mono<Void> removeRecipeIngredient(String recipeId, String ingredientId);
+
+    Mono<Void> addRecipeTag(String recipeId, String tag);
+
+    Mono<Void> removeRecipeTag(String recipeId, String tag);
 }

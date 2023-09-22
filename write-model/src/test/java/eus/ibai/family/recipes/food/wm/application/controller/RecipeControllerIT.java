@@ -3,16 +3,14 @@ package eus.ibai.family.recipes.food.wm.application.controller;
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
 import eus.ibai.family.recipes.food.security.*;
 import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeIngredientDto;
+import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeTagDto;
 import eus.ibai.family.recipes.food.wm.application.dto.CreateRecipeDto;
 import eus.ibai.family.recipes.food.wm.application.dto.UpdateRecipeDto;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeAlreadyExistsException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeIngredientAlreadyAddedException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeIngredientNotFoundException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeService;
+import eus.ibai.family.recipes.food.wm.domain.recipe.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -248,6 +246,96 @@ class RecipeControllerIT {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_add_tag_to_recipe() {
+        AddRecipeTagDto dto = new AddRecipeTagDto("tagName");
+
+        when(recipeService.addRecipeTag("recipeId", dto.tag())).thenReturn(Mono.empty());
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/tags")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(dto))
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    void should_not_add_tag_if_recipe_does_not_exist() {
+        AddRecipeTagDto dto = new AddRecipeTagDto("First course");
+
+        when(recipeService.addRecipeTag("recipeId", dto.tag())).thenReturn(Mono.error(new RecipeNotFoundException("")));
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/tags")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(dto))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void should_not_add_tag_if_tag_name_not_provided(String tag) {
+        AddRecipeTagDto dto = new AddRecipeTagDto(tag);
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/tags")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(dto))
+                .exchange()
+                .expectStatus().isBadRequest();
+
+        verifyNoInteractions(recipeService);
+    }
+
+    @Test
+    void should_remove_tag_from_recipe() {
+        when(recipeService.removeRecipeTag("recipeId", "tagName")).thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/tags?name=tag")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    void should_not_remove_tag_if_recipe_does_not_exist() {
+        when(recipeService.removeRecipeTag("recipeId", "tagName")).thenReturn(Mono.error(new RecipeNotFoundException("")));
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/tags?name=tagName")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_remove_tag_if_it_does_not_contain() {
+        when(recipeService.removeRecipeTag("recipeId", "tagName")).thenReturn(Mono.error(new RecipeTagNotFoundException("")));
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/tags?name=tagName")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"name=", "name=  "})
+    void should_provide_valid_tag_name_when_deleting_tag_from_recipe(String params) {
+        webTestClient.delete()
+                .uri("/recipes/recipeId/tags?" + params)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test

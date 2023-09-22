@@ -71,6 +71,16 @@ public class RecipeServiceImpl implements RecipeService {
         return send(new RemoveRecipeIngredientCommand(recipeId, ingredientId));
     }
 
+    @Override
+    public Mono<Void> addRecipeTag(String recipeId, String tag) {
+        return send(new AddRecipeTagCommand(recipeId, tag));
+    }
+
+    @Override
+    public Mono<Void> removeRecipeTag(String recipeId, String tag) {
+        return send(new RemoveRecipeTagCommand(recipeId, tag));
+    }
+
     private Mono<Void> send(AggregateCommand<String> command) {
         return commandGateway.send(command)
                 .onErrorMap(AggregateNotFoundException.class, t -> new RecipeNotFoundException(command.aggregateId()))

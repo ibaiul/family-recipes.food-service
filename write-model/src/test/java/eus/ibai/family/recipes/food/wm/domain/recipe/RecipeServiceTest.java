@@ -265,4 +265,65 @@ class RecipeServiceTest {
                 .verifyError(RecipeNotFoundException.class);
     }
 
+    @Test
+    void should_add_tag_to_recipe() {
+        when(commandGateway.send(new AddRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.empty());
+
+        recipeService.addRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyComplete();
+    }
+
+    @Test
+    void should_not_add_tag_if_recipe_does_not_exist() {
+        when(commandGateway.send(new AddRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new AggregateNotFoundException("", "")));
+
+        recipeService.addRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyError(RecipeNotFoundException.class);
+    }
+
+    @Test
+    void should_not_add_tag_if_recipe_already_deleted() {
+        when(commandGateway.send(new AddRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new AggregateDeletedException("", "")));
+
+        recipeService.addRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyError(RecipeNotFoundException.class);
+    }
+
+    @Test
+    void should_remove_tag_from_recipe() {
+        when(commandGateway.send(new RemoveRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.empty());
+
+        recipeService.removeRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyComplete();
+    }
+
+    @Test
+    void should_not_remove_tag_if_not_in_recipe() {
+        when(commandGateway.send(new RemoveRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new RecipeTagNotFoundException("")));
+
+        recipeService.removeRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyError(RecipeTagNotFoundException.class);
+    }
+
+    @Test
+    void should_not_remove_tag_if_recipe_does_not_exist() {
+        when(commandGateway.send(new RemoveRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new AggregateNotFoundException("", "")));
+
+        recipeService.removeRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyError(RecipeNotFoundException.class);
+    }
+    @Test
+    void should_not_remove_tag_if_recipe_already_deleted() {
+        when(commandGateway.send(new RemoveRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new AggregateDeletedException("", "")));
+
+        recipeService.removeRecipeTag("recipeId", "tag")
+                .as(StepVerifier::create)
+                .verifyError(RecipeNotFoundException.class);
+    }
 }

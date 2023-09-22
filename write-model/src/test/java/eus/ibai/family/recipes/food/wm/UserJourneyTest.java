@@ -42,6 +42,8 @@ class UserJourneyTest extends AcceptanceTest {
         createIngredient("Egg");
         addRecipeIngredient(recipeUrl, "Egg");
         removeRecipeIngredient(recipeIngredientUrl);
+        tagRecipe(recipeUrl, "First course");
+        untagRecipe(recipeUrl, "First course");
         deleteRecipe(recipeUrl);
     }
 
@@ -125,6 +127,27 @@ class UserJourneyTest extends AcceptanceTest {
 
     private void removeRecipeIngredient(String recipeIngredientUrl) {
         deleteResource(recipeIngredientUrl);
+    }
+
+    private void tagRecipe(String recipeUrl, String tag) {
+        AddRecipeTagDto dto = new AddRecipeTagDto(tag);
+        webTestClient.post()
+                .uri(format(recipeUrl + "/tags"))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(dto))
+                .exchange()
+                .expectStatus().isNoContent()
+                .expectBody().isEmpty();
+    }
+
+    private void untagRecipe(String recipeUrl, String tag) {
+        webTestClient.delete()
+                .uri(format(recipeUrl + "/tags?name=" + tag))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNoContent()
+                .expectBody().isEmpty();
     }
 
     private void deleteRecipe(String recipeUrl) {
