@@ -256,6 +256,7 @@ class RecipeServiceTest {
                 .as(StepVerifier::create)
                 .verifyError(RecipeNotFoundException.class);
     }
+
     @Test
     void should_not_remove_ingredient_from_recipe_if_recipe_already_deleted() {
         when(commandGateway.send(new RemoveRecipeIngredientCommand("recipeId", "ingredientId"))).thenReturn(Mono.error(new AggregateDeletedException("", "")));
@@ -318,6 +319,7 @@ class RecipeServiceTest {
                 .as(StepVerifier::create)
                 .verifyError(RecipeNotFoundException.class);
     }
+
     @Test
     void should_not_remove_tag_if_recipe_already_deleted() {
         when(commandGateway.send(new RemoveRecipeTagCommand("recipeId", "tag"))).thenReturn(Mono.error(new AggregateDeletedException("", "")));
