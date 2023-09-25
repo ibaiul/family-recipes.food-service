@@ -5,6 +5,7 @@ spring:
     url: jdbc:postgresql://db:5432/local-command-db
 
 newrelic:
+  enabled: false
   metrics:
     ingest-uri: http://wiremock:8080/metric/v1
 
