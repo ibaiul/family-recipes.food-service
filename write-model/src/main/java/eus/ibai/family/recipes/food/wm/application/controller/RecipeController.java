@@ -2,20 +2,22 @@ package eus.ibai.family.recipes.food.wm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
 import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeIngredientDto;
+import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeTagDto;
 import eus.ibai.family.recipes.food.wm.application.dto.CreateRecipeDto;
 import eus.ibai.family.recipes.food.wm.application.dto.UpdateRecipeDto;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeAlreadyExistsException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeIngredientAlreadyAddedException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeIngredientNotFoundException;
-import eus.ibai.family.recipes.food.wm.domain.recipe.RecipeService;
+import eus.ibai.family.recipes.food.wm.domain.recipe.*;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+@Validated
 @RestController
 @RequestMapping("/recipes")
 @AllArgsConstructor
@@ -55,7 +57,19 @@ public class RecipeController {
         return recipeService.removeRecipeIngredient(recipeId, ingredientId);
     }
 
-    @ExceptionHandler({ RecipeNotFoundException.class, RecipeIngredientNotFoundException.class })
+    @PostMapping("/{id}/tags")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> addTag(@PathVariable("id") String recipeId, @Valid @RequestBody AddRecipeTagDto dto) {
+        return recipeService.addRecipeTag(recipeId, dto.tag());
+    }
+
+    @DeleteMapping("/{id}/tags")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> removeTag(@PathVariable("id") String recipeId, @NotBlank @RequestParam("name") String tag) {
+        return recipeService.removeRecipeTag(recipeId, tag);
+    }
+
+    @ExceptionHandler({ RecipeNotFoundException.class, RecipeIngredientNotFoundException.class, RecipeTagNotFoundException.class})
     public ResponseEntity<Void> handleNotFoundExceptions() {
         return ResponseEntity.notFound().build();
     }
@@ -63,5 +77,10 @@ public class RecipeController {
     @ExceptionHandler({ RecipeAlreadyExistsException.class, RecipeIngredientAlreadyAddedException.class })
     public ResponseEntity<Void> handleConflictExceptions() {
         return ResponseEntity.status(HttpStatus.CONFLICT).build();
+    }
+
+    @ExceptionHandler({ ConstraintViolationException.class })
+    public ResponseEntity<Void> handleBadRequestExceptions() {
+        return ResponseEntity.badRequest().build();
     }
 }

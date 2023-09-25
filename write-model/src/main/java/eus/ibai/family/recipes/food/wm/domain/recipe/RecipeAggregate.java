@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.time.LocalDateTime.now;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 @Getter
 @Aggregate
@@ -26,6 +27,8 @@ public class RecipeAggregate {
 
     private final Set<String> links = new HashSet<>();
 
+    private final Set<String> tags = new HashSet<>();
+
     @AggregateMember
     private final Set<RecipeIngredientEntity> ingredients = new HashSet<>();
 
@@ -34,7 +37,7 @@ public class RecipeAggregate {
 
     @CommandHandler
     public RecipeAggregate(CreateRecipeCommand command) {
-        AggregateLifecycle.apply(new RecipeCreatedEvent(command.aggregateId(), command.recipeName()));
+        apply(new RecipeCreatedEvent(command.aggregateId(), command.recipeName()));
     }
 
     @EventSourcingHandler
@@ -48,7 +51,7 @@ public class RecipeAggregate {
         if (name.equals(command.recipeName()) && links.equals(command.recipeLinks())) {
             return;
         }
-        AggregateLifecycle.apply(new RecipeUpdatedEvent(id, command.recipeName(), command.recipeLinks()));
+        apply(new RecipeUpdatedEvent(id, command.recipeName(), command.recipeLinks()));
     }
 
     @EventSourcingHandler
@@ -66,7 +69,7 @@ public class RecipeAggregate {
         }
 
         RecipeIngredient addedRecipeIngredient = new RecipeIngredient(command.ingredientId(), now(clock));
-        AggregateLifecycle.apply(new RecipeIngredientAddedEvent(id, addedRecipeIngredient));
+        apply(new RecipeIngredientAddedEvent(id, addedRecipeIngredient));
     }
 
     @EventSourcingHandler
@@ -79,7 +82,7 @@ public class RecipeAggregate {
     public void handle(RemoveRecipeIngredientCommand command) {
         RecipeIngredientEntity removedRecipeIngredient = ingredients.stream().filter(recipeIngredient -> recipeIngredient.getIngredientId().equals(command.ingredientId())).findFirst()
                 .orElseThrow(() -> new RecipeIngredientNotFoundException("Recipe: " + this + ", Ingredient: " + command.ingredientId()));
-        AggregateLifecycle.apply(new RecipeIngredientRemovedEvent(id, new RecipeIngredient(removedRecipeIngredient.getIngredientId(), removedRecipeIngredient.getAddedOn())));
+        apply(new RecipeIngredientRemovedEvent(id, new RecipeIngredient(removedRecipeIngredient.getIngredientId(), removedRecipeIngredient.getAddedOn())));
     }
 
     @EventSourcingHandler
@@ -89,8 +92,33 @@ public class RecipeAggregate {
     }
 
     @CommandHandler
+    public void handle(AddRecipeTagCommand command) {
+        if (!tags.contains(command.recipeTag())) {
+            apply(new RecipeTagAddedEvent(id, command.recipeTag()));
+        }
+    }
+
+    @EventSourcingHandler
+    public void on(RecipeTagAddedEvent event) {
+        tags.add(event.recipeTag());
+    }
+
+    @CommandHandler
+    public void handle(RemoveRecipeTagCommand command) {
+        if (!tags.contains(command.recipeTag())) {
+            throw new RecipeTagNotFoundException("Recipe:" + id + ", Tag: " + command.recipeTag());
+        }
+        apply(new RecipeTagRemovedEvent(id, command.recipeTag()));
+    }
+
+    @EventSourcingHandler
+    public void on(RecipeTagRemovedEvent event) {
+        tags.remove(event.recipeTag());
+    }
+
+    @CommandHandler
     public void handle(DeleteRecipeCommand command) {
-        AggregateLifecycle.apply(new RecipeDeletedEvent(id, name));
+        apply(new RecipeDeletedEvent(id, name));
     }
 
     @EventSourcingHandler

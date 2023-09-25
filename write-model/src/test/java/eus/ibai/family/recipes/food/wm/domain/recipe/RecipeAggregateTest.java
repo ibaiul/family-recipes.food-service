@@ -121,4 +121,56 @@ class RecipeAggregateTest {
                 .expectException(RecipeIngredientNotFoundException.class)
                 .expectNoEvents();
     }
+
+    @Test
+    void should_add_recipe_tag() {
+        String recipeId = "recipeId";
+        String expectedTag = "First course";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"))
+                .when(new AddRecipeTagCommand(recipeId, expectedTag))
+                .expectEvents(new RecipeTagAddedEvent(recipeId, expectedTag))
+                .expectState(state -> {
+                    assertThat(state.getId()).isEqualTo(recipeId);
+                    assertThat(state.getName()).isEqualTo("Pasta carbonara");
+                    assertThat(state.getTags()).containsExactly(expectedTag);
+                });
+    }
+
+    @Test
+    void should_not_add_recipe_tag_if_already_added() {
+        String recipeId = "recipeId";
+        String tag = "First course";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"),
+                        new RecipeTagAddedEvent(recipeId, tag))
+                .when(new AddRecipeTagCommand(recipeId, tag))
+                .expectNoEvents();
+    }
+
+    @Test
+    void should_remove_recipe_tag_when_present() {
+        String recipeId = "recipeId";
+        String tag = "First course";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"),
+                        new RecipeTagAddedEvent(recipeId, tag))
+                .when(new RemoveRecipeTagCommand(recipeId, tag))
+                .expectEvents(new RecipeTagRemovedEvent(recipeId, tag))
+                .expectState(state -> {
+                    assertThat(state.getId()).isEqualTo(recipeId);
+                    assertThat(state.getName()).isEqualTo("Pasta carbonara");
+                    assertThat(state.getTags()).isEmpty();
+                });
+    }
+
+    @Test
+    void should_not_remove_recipe_tag_when_not_present() {
+        String recipeId = "recipeId";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"))
+                .when(new RemoveRecipeTagCommand(recipeId, "recipeTag"))
+                .expectException(RecipeTagNotFoundException.class)
+                .expectNoEvents();
+    }
 }

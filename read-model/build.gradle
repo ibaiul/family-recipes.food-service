@@ -19,5 +19,6 @@ dependencies {
 
     implementation "org.axonframework:axon-test:$axonVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
-    testImplementation "io.r2dbc:r2dbc-h2:$h2Version"
+    testImplementation "io.r2dbc:r2dbc-h2:$h2R2dbcVersion"
+    testImplementation "com.h2database:h2:$h2Version"
 }
