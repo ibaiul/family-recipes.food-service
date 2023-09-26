@@ -280,6 +280,7 @@ class RecipeControllerIT {
 
     @ParameterizedTest
     @NullAndEmptySource
+    @ValueSource(strings = {" ", "  "})
     void should_not_add_tag_if_tag_name_not_provided(String tag) {
         AddRecipeTagDto dto = new AddRecipeTagDto(tag);
 
