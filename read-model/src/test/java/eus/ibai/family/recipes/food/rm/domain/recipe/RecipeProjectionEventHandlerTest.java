@@ -33,11 +33,11 @@ class RecipeProjectionEventHandlerTest {
     @Test
     void should_persist_new_recipe_when_recipe_created_event_received() {
         RecipeCreatedEvent event = new RecipeCreatedEvent(generateId(), "Pasta carbonara");
-        when(recipeRepository.saveNew(event.aggregateId(), event.recipeName(), new String[0])).thenReturn(Mono.empty());
+        when(recipeRepository.saveNew(event.aggregateId(), event.recipeName())).thenReturn(Mono.empty());
 
         recipeProjectionEventHandler.on(event);
 
-        verify(recipeRepository).saveNew(event.aggregateId(), event.recipeName(), new String[0]);
+        verify(recipeRepository).saveNew(event.aggregateId(), event.recipeName());
     }
 
     @Test
@@ -53,7 +53,6 @@ class RecipeProjectionEventHandlerTest {
         verify(recipeRepository).save(expectedEntity);
     }
 
-
     @Test
     void should_delete_recipe_when_recipe_deleted_event_received() {
         RecipeDeletedEvent event = new RecipeDeletedEvent(generateId(), "Pasta carbonara");
@@ -65,7 +64,6 @@ class RecipeProjectionEventHandlerTest {
         verify(recipeRepository).deleteById(event.aggregateId());
     }
 
-
     @Test
     void should_add_recipe_ingredient_when_recipe_ingredient_added_event_received() {
         RecipeIngredientAddedEvent event = new RecipeIngredientAddedEvent(generateId(), new RecipeIngredient(generateId(), fixedTime()));
@@ -76,7 +74,6 @@ class RecipeProjectionEventHandlerTest {
         verify(recipeIngredientRepository).saveNew(event.aggregateId(), event.recipeIngredient().ingredientId(), fixedTime());
     }
 
-
     @Test
     void should_remove_recipe_ingredient_when_recipe_ingredient_removed_event_received() {
         RecipeIngredientRemovedEvent event = new RecipeIngredientRemovedEvent(generateId(), new RecipeIngredient(generateId(), fixedTime()));
@@ -85,5 +82,33 @@ class RecipeProjectionEventHandlerTest {
         recipeProjectionEventHandler.on(event);
 
         verify(recipeIngredientRepository).deleteByRecipeIdAndIngredientId(event.aggregateId(), event.recipeIngredient().ingredientId());
+    }
+
+    @Test
+    void should_add_recipe_tag_when_recipe_tag_added_event_received() {
+        RecipeTagAddedEvent event = new RecipeTagAddedEvent(generateId(), "First course");
+        RecipeEntity initialEntity = new RecipeEntity(event.aggregateId(), "Pasta carbonara");
+        RecipeEntity expectedEntity = new RecipeEntity(event.aggregateId(), initialEntity.getName(), initialEntity.getLinks())
+                .addTag(event.recipeTag());
+        when(recipeRepository.findById(event.aggregateId())).thenReturn(Mono.just(initialEntity));
+
+        recipeProjectionEventHandler.on(event);
+
+        verify(recipeRepository).save(expectedEntity);
+    }
+
+    @Test
+    void should_remove_recipe_tag_when_recipe_tag_removed_event_received() {
+        RecipeTagRemovedEvent event = new RecipeTagRemovedEvent(generateId(), "First course");
+        RecipeEntity initialEntity = new RecipeEntity(event.aggregateId(), "Pasta carbonara")
+                .addTag("Pasta")
+                .addTag(event.recipeTag());
+        RecipeEntity expectedEntity = new RecipeEntity(event.aggregateId(), initialEntity.getName(), initialEntity.getLinks())
+                .addTag("Pasta");
+        when(recipeRepository.findById(event.aggregateId())).thenReturn(Mono.just(initialEntity));
+
+        recipeProjectionEventHandler.on(event);
+
+        verify(recipeRepository).save(expectedEntity);
     }
 }

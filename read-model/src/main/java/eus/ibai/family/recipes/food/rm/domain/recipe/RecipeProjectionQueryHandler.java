@@ -13,10 +13,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.function.Function.identity;
@@ -45,8 +42,15 @@ class RecipeProjectionQueryHandler {
                 .map(recipeEntityRepository::findByIngredientId)
                 .orElseGet(() -> query.getPropertyId()
                         .map(recipeEntityRepository::findByPropertyId)
-                        .orElseGet(recipeEntityRepository::findAll))
+                        .orElseGet(() -> query.getTag()
+                                .map(recipeEntityRepository::findByTag)
+                                .orElseGet(recipeEntityRepository::findAll)))
                 .map(this::toDomainObjectLazy);
+    }
+
+    @QueryHandler
+    Flux<String> getTags(FindRecipeTagsQuery query) {
+        return recipeEntityRepository.findAllTags();
     }
 
     private Mono<RecipeProjection> loadLazyRelations(RecipeEntity recipeEntityLazy) {
@@ -62,11 +66,15 @@ class RecipeProjectionQueryHandler {
     }
 
     private RecipeProjection toDomainObject(RecipeEntity recipeEntity, Map<String, RecipeIngredientEntity> recipePropertiesMap) {
-        Set<RecipeIngredientProjection> recipeProperties = Optional.ofNullable(recipeEntity.getIngredients())
+        Set<RecipeIngredientProjection> recipeIngredients = Optional.ofNullable(recipeEntity.getIngredients())
                 .map(ingredientEntities -> ingredientEntities.stream()
                         .map(ingredientEntity -> new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), recipePropertiesMap.get(ingredientEntity.getId()).getAddedOn()))
                         .collect(Collectors.toSet()))
                 .orElseGet(Collections::emptySet);
-        return new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), recipeEntity.getLinks(), recipeProperties);
+        Set<String> links = Optional.ofNullable(recipeEntity.getLinks())
+                .orElseGet(HashSet::new);
+        Set<String> tags = Optional.ofNullable(recipeEntity.getTags())
+                .orElseGet(HashSet::new);
+        return new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), links, recipeIngredients, tags);
     }
 }

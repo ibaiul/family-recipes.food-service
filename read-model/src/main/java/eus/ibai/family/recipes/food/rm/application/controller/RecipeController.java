@@ -2,8 +2,10 @@ package eus.ibai.family.recipes.food.rm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
 import eus.ibai.family.recipes.food.rm.application.dto.BasicRecipeDto;
+import eus.ibai.family.recipes.food.rm.application.dto.BasicRecipeTagDto;
 import eus.ibai.family.recipes.food.rm.application.dto.RecipeDto;
 import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipeByIdQuery;
+import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipeTagsQuery;
 import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipesByQuery;
 import eus.ibai.family.recipes.food.rm.domain.recipe.RecipeProjection;
 import jakarta.validation.ConstraintViolationException;
@@ -33,9 +35,16 @@ public class RecipeController {
 
     @GetMapping
     public Flux<BasicRecipeDto> getBy(@RequestParam(value = "ingredientId", required = false) @UUID String ingredientId,
-                                      @RequestParam(value = "propertyId", required = false) @UUID String propertyId) {
-        return queryGateway.streamingQuery(new FindRecipesByQuery(ingredientId, propertyId), RecipeProjection.class)
-                    .map(BasicRecipeDto::fromProjection);
+                                      @RequestParam(value = "propertyId", required = false) @UUID String propertyId,
+                                      @RequestParam(value = "tag", required = false) String tag) {
+        return queryGateway.streamingQuery(new FindRecipesByQuery(ingredientId, propertyId, tag), RecipeProjection.class)
+                .map(BasicRecipeDto::fromProjection);
+    }
+
+    @GetMapping("/tags")
+    public Flux<BasicRecipeTagDto> getAllTags() {
+        return queryGateway.streamingQuery(new FindRecipeTagsQuery(), String.class)
+                .map(BasicRecipeTagDto::new);
     }
 
     @ExceptionHandler({ RecipeNotFoundException.class })

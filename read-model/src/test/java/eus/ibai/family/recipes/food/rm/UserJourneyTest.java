@@ -1,6 +1,7 @@
 package eus.ibai.family.recipes.food.rm;
 
 import eus.ibai.family.recipes.food.rm.application.dto.*;
+import eus.ibai.family.recipes.food.rm.infrastructure.model.RecipeEntity;
 import eus.ibai.family.recipes.food.rm.test.AcceptanceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,10 +10,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static eus.ibai.family.recipes.food.test.TestUtils.fixedTime;
@@ -34,11 +33,14 @@ class UserJourneyTest extends AcceptanceTest {
 
     private Map<String, BasicPropertyDto> properties;
 
+    private Set<String> recipeTags;
+
     @BeforeEach
     void beforeEach() {
         recipes = new HashMap<>();
         ingredients = new HashMap<>();
         properties = new HashMap<>();
+        recipeTags = new HashSet<>();
         createTestData();
         webTestClient = WebTestClient.bindToApplicationContext(applicationContext).build();
         bearerToken = authenticate(webTestClient).accessToken();
@@ -50,6 +52,8 @@ class UserJourneyTest extends AcceptanceTest {
         getRecipeById();
         getRecipesByIngredientId();
         getRecipesByPropertyId();
+        getAllRecipeTags();
+        getRecipesByTag();
     }
 
     @Test
@@ -75,16 +79,17 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(recipes.values().toArray(new BasicRecipeDto[0]));
+        assertThat(queryResult).containsExactlyInAnyOrderElementsOf(recipes.values());
     }
 
     private void getRecipeById() {
         BasicRecipeDto recipe = recipes.get("Pasta carbonara");
         BasicIngredientDto ingredient = ingredients.get("Spaghetti");
-        RecipeDto expectedRecipe = new RecipeDto(recipe.id(), recipe.name(), Set.of("https://pasta.com"), Set.of(new RecipeIngredientDto(ingredient.id(), ingredient.name(), fixedTime())));
+        RecipeDto expectedRecipe = new RecipeDto(recipe.id(), recipe.name(), Set.of("https://pasta.com"),
+                Set.of(new RecipeIngredientDto(ingredient.id(), ingredient.name(), fixedTime())), Set.of("Italian cuisine", "First course"));
 
         webTestClient.get()
-                .uri("/recipes/" + recipes.get("Pasta carbonara").id())
+                .uri("/recipes/" + recipe.id())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
                 .expectStatus().isOk()
@@ -101,7 +106,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(recipes.get("Paella"));
+        assertThat(queryResult).containsExactlyInAnyOrder(recipes.get("Paella"));
     }
 
     private void getRecipesByPropertyId() {
@@ -114,7 +119,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(recipes.get("Pasta carbonara"), recipes.get("Paella"));
+        assertThat(queryResult).containsExactlyInAnyOrder(recipes.get("Pasta carbonara"), recipes.get("Paella"));
     }
 
     private void getAllIngredients() {
@@ -127,7 +132,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(ingredients.values().toArray(new BasicIngredientDto[0]));
+        assertThat(queryResult).containsExactlyInAnyOrderElementsOf(ingredients.values());
     }
 
     private void getIngredientById() {
@@ -153,7 +158,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(ingredients.get("Spaghetti"), ingredients.get("Rice"));
+        assertThat(queryResult).containsExactlyInAnyOrder(ingredients.get("Spaghetti"), ingredients.get("Rice"));
     }
 
     private void getAllProperties() {
@@ -166,7 +171,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(queryResult).containsOnly(properties.values().toArray(new BasicPropertyDto[0]));
+        assertThat(queryResult).containsExactlyInAnyOrderElementsOf(properties.values());
     }
 
     private void getPropertyById() {
@@ -180,9 +185,45 @@ class UserJourneyTest extends AcceptanceTest {
                 .expectBody(BasicPropertyDto.class).isEqualTo(expectedProperty);
     }
 
+    private void getAllRecipeTags() {
+        List<BasicRecipeTagDto> expectedTags = Stream.of("First course", "Spanish cuisine", "Italian cuisine")
+                .map(BasicRecipeTagDto::new)
+                .toList();
+
+        List<BasicRecipeTagDto> queryResult = webTestClient.get()
+                .uri("/recipes/tags")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(BasicRecipeTagDto.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(queryResult).containsExactlyInAnyOrderElementsOf(expectedTags);
+    }
+
+    private void getRecipesByTag() {
+        List<BasicRecipeDto> expectedRecipes = List.of(recipes.get("Pasta carbonara"));
+
+        List<BasicRecipeDto> queryResult = webTestClient.get()
+                .uri("/recipes?tag=Italian cuisine")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(BasicRecipeDto.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(queryResult).containsExactlyInAnyOrderElementsOf(expectedRecipes);
+    }
+
     private void createTestData() {
         BasicRecipeDto recipeDto = new BasicRecipeDto(generateId(), "Pasta carbonara");
-        recipeEntityRepository.saveNew(recipeDto.id(), recipeDto.name(), new String[]{"https://pasta.com"}).block();
+        recipeEntityRepository.saveNew(recipeDto.id(), recipeDto.name())
+                .thenReturn(new RecipeEntity(recipeDto.id(), recipeDto.name(), Set.of("https://pasta.com"))
+                        .addTag("First course")
+                        .addTag("Italian cuisine"))
+                .flatMap(recipeEntityRepository::save).block();
         BasicIngredientDto ingredientDto = new BasicIngredientDto(generateId(), "Spaghetti");
         ingredientEntityRepository.saveNew(ingredientDto.id(), ingredientDto.name()).block();
         recipeIngredientEntityRepository.saveNew(recipeDto.id(), ingredientDto.id(), fixedTime()).block();
@@ -191,14 +232,18 @@ class UserJourneyTest extends AcceptanceTest {
         ingredientPropertyEntityRepository.saveNew(ingredientDto.id(), propertyDto.id(), fixedTime()).block();
 
         BasicRecipeDto recipeDto2 = new BasicRecipeDto(generateId(), "Paella");
-        recipeEntityRepository.saveNew(recipeDto2.id(), recipeDto2.name(), new String[]{"https://paella.com"}).block();
+        recipeEntityRepository.saveNew(recipeDto2.id(), recipeDto2.name())
+                .thenReturn(new RecipeEntity(recipeDto2.id(), recipeDto2.name(), Set.of("https://paella.com"))
+                        .addTag("First course")
+                        .addTag("Spanish cuisine"))
+                .flatMap(recipeEntityRepository::save).block();
         BasicIngredientDto ingredientDto2 = new BasicIngredientDto(generateId(), "Rice");
         ingredientEntityRepository.saveNew(ingredientDto2.id(), ingredientDto2.name()).block();
         recipeIngredientEntityRepository.saveNew(recipeDto2.id(), ingredientDto2.id(), fixedTime()).block();
         ingredientPropertyEntityRepository.saveNew(ingredientDto2.id(), propertyDto.id(), fixedTime()).block();
 
         BasicRecipeDto recipeDto3 = new BasicRecipeDto(generateId(), "Mix salad");
-        recipeEntityRepository.saveNew(recipeDto3.id(), recipeDto3.name(), new String[0]).block();
+        recipeEntityRepository.saveNew(recipeDto3.id(), recipeDto3.name()).block();
         BasicIngredientDto ingredientDto3 = new BasicIngredientDto(generateId(), "Orange");
         ingredientEntityRepository.saveNew(ingredientDto3.id(), ingredientDto3.name()).block();
         BasicPropertyDto propertyDto2 = new BasicPropertyDto(generateId(), "Fiber");

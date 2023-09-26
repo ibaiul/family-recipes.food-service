@@ -15,7 +15,7 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
   r2dbc:
-    url: r2dbc:h2:mem:///integration-query-db
+    url: r2dbc:h2:mem:///integration-query-db;TRACE_LEVEL_FILE=4;DB_CLOSE_DELAY=-1
     username: sa
     password: sa
   flyway:

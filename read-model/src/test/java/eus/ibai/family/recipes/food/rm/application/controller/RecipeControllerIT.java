@@ -1,12 +1,7 @@
 package eus.ibai.family.recipes.food.rm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
-import eus.ibai.family.recipes.food.rm.application.dto.BasicRecipeDto;
-import eus.ibai.family.recipes.food.rm.application.dto.RecipeDto;
-import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipeByIdQuery;
-import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipesByQuery;
-import eus.ibai.family.recipes.food.rm.domain.recipe.RecipeIngredientProjection;
-import eus.ibai.family.recipes.food.rm.domain.recipe.RecipeProjection;
+import eus.ibai.family.recipes.food.rm.domain.recipe.*;
 import eus.ibai.family.recipes.food.security.*;
 import org.axonframework.extensions.reactor.queryhandling.gateway.ReactorQueryGateway;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,15 +18,14 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static eus.ibai.family.recipes.food.test.TestUtils.fixedTime;
 import static eus.ibai.family.recipes.food.util.Utils.generateId;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {RecipeController.class, AuthController.class})
@@ -53,9 +47,11 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_recipe() {
-        RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils", Set.of("https://lentils.com"), Set.of(new RecipeIngredientProjection("recipeId", "Legume", fixedTime())));
+        Set<String> links = Set.of("https://lentils.com", "https://chorizo.com");
+        Set<String> tags = Set.of("First course", "Spanish cuisine");
+        RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils with chorizo", links,
+                Set.of(new RecipeIngredientProjection("ingredientId", "Lentils", fixedTime())), tags);
         when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
-        RecipeDto expectedRecipeDto = RecipeDto.fromProjection(recipe);
 
         webTestClient.get()
                 .uri("/recipes/" + recipe.id())
@@ -63,13 +59,21 @@ class RecipeControllerIT {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(RecipeDto.class).isEqualTo(expectedRecipeDto);
+                .expectBody()
+                .jsonPath("$.id").isEqualTo(recipe.id())
+                .jsonPath("$.name").isEqualTo("Lentils with chorizo")
+                .jsonPath("$.ingredients[0].id").isEqualTo("ingredientId")
+                .jsonPath("$.ingredients[0].name").isEqualTo("Lentils")
+                .jsonPath("$.ingredients[0].addedOn").isEqualTo("1970-01-01T00:00:00.000")
+                .jsonPath("$.links").value(containsInAnyOrder(links.toArray()))
+                .jsonPath("$.tags").value(containsInAnyOrder(tags.toArray()));
     }
 
     @Test
     void should_serialize_recipe_ingredient_date_with_three_digit_millis() {
         String expectedDateTimeFormat = "2023-04-14T22:39:00.200";
-        RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils", Collections.emptySet(), Set.of(new RecipeIngredientProjection("ingredientId", "Legume", LocalDateTime.parse(expectedDateTimeFormat))));
+        RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils with chorizo", Set.of("https://lentils.com"),
+                Set.of(new RecipeIngredientProjection(generateId(), "Lentils", LocalDateTime.parse(expectedDateTimeFormat))), Set.of("First course"));
         when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
 
         webTestClient.get()
@@ -104,14 +108,11 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_all_recipes() {
-        Set<RecipeProjection> recipes = Set.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com")),
-                new RecipeProjection(generateId(), "White beans", Set.of("https://white.beans.com")));
-        when(queryGateway.streamingQuery(new FindRecipesByQuery(null, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
-        List<BasicRecipeDto> expectedRecipeDtos = recipes.stream()
-                .map(BasicRecipeDto::fromProjection)
-                .collect(Collectors.toList());
+        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(generateId(), "Beans", fixedTime()));
+        List<RecipeProjection> recipes = List.of(
+                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
+                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        when(queryGateway.streamingQuery(new FindRecipesByQuery(null, null, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
                 .uri("/recipes")
@@ -119,20 +120,28 @@ class RecipeControllerIT {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBodyList(BasicRecipeDto.class).isEqualTo(expectedRecipeDtos);
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo(recipes.get(0).id())
+                .jsonPath("$[0].name").isEqualTo(recipes.get(0).name())
+                .jsonPath("$[0].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[0].links").doesNotHaveJsonPath()
+                .jsonPath("$[0].tags").doesNotHaveJsonPath()
+                .jsonPath("$[1].id").isEqualTo(recipes.get(1).id())
+                .jsonPath("$[1].name").isEqualTo(recipes.get(1).name())
+                .jsonPath("$[1].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[1].links").doesNotHaveJsonPath()
+                .jsonPath("$[1].tags").doesNotHaveJsonPath()
+                .jsonPath("$[2]").doesNotHaveJsonPath();
     }
 
     @Test
     void should_retrieve_recipes_by_ingredient_id() {
         String ingredientId = generateId();
-        Set<RecipeProjection> recipes = Set.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com")),
-                new RecipeProjection(generateId(), "White beans", Set.of("https://white.beans.com")));
-        when(queryGateway.streamingQuery(new FindRecipesByQuery(ingredientId, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
-        List<BasicRecipeDto> expectedRecipeDtos = recipes.stream()
-                .map(BasicRecipeDto::fromProjection)
-                .collect(Collectors.toList());
+        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(ingredientId, "Beans", fixedTime()));
+        List<RecipeProjection> recipes = List.of(
+                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
+                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        when(queryGateway.streamingQuery(new FindRecipesByQuery(ingredientId, null, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
                 .uri("/recipes?ingredientId=" + ingredientId)
@@ -140,20 +149,28 @@ class RecipeControllerIT {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBodyList(BasicRecipeDto.class).isEqualTo(expectedRecipeDtos);
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo(recipes.get(0).id())
+                .jsonPath("$[0].name").isEqualTo(recipes.get(0).name())
+                .jsonPath("$[0].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[0].links").doesNotHaveJsonPath()
+                .jsonPath("$[0].tags").doesNotHaveJsonPath()
+                .jsonPath("$[1].id").isEqualTo(recipes.get(1).id())
+                .jsonPath("$[1].name").isEqualTo(recipes.get(1).name())
+                .jsonPath("$[1].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[1].links").doesNotHaveJsonPath()
+                .jsonPath("$[1].tags").doesNotHaveJsonPath()
+                .jsonPath("$[2]").doesNotHaveJsonPath();
     }
 
     @Test
     void should_retrieve_recipes_by_property_id() {
+        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(generateId(), "Beans", fixedTime()));
+        List<RecipeProjection> recipes = List.of(
+                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
+                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
         String propertyId = generateId();
-        Set<RecipeProjection> recipes = Set.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com")),
-                new RecipeProjection(generateId(), "White beans", Set.of("https://white.beans.com")));
-        when(queryGateway.streamingQuery(new FindRecipesByQuery(null, propertyId), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
-        List<BasicRecipeDto> expectedRecipeDtos = recipes.stream()
-                .map(BasicRecipeDto::fromProjection)
-                .collect(Collectors.toList());
+        when(queryGateway.streamingQuery(new FindRecipesByQuery(null, propertyId, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
                 .uri("/recipes?propertyId=" + propertyId)
@@ -161,7 +178,46 @@ class RecipeControllerIT {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBodyList(BasicRecipeDto.class).isEqualTo(expectedRecipeDtos);
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo(recipes.get(0).id())
+                .jsonPath("$[0].name").isEqualTo(recipes.get(0).name())
+                .jsonPath("$[0].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[0].links").doesNotHaveJsonPath()
+                .jsonPath("$[0].tags").doesNotHaveJsonPath()
+                .jsonPath("$[1].id").isEqualTo(recipes.get(1).id())
+                .jsonPath("$[1].name").isEqualTo(recipes.get(1).name())
+                .jsonPath("$[1].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[1].links").doesNotHaveJsonPath()
+                .jsonPath("$[1].tags").doesNotHaveJsonPath()
+                .jsonPath("$[2]").doesNotHaveJsonPath();
+    }
+
+    @Test
+    void should_retrieve_recipes_by_tag() {
+        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection("ingredientId", "Beans", fixedTime()));
+        List<RecipeProjection> recipes = List.of(
+                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
+                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        when(queryGateway.streamingQuery(new FindRecipesByQuery(null, null, "First course"), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
+
+        webTestClient.get()
+                .uri("/recipes?tag=First course")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo(recipes.get(0).id())
+                .jsonPath("$[0].name").isEqualTo(recipes.get(0).name())
+                .jsonPath("$[0].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[0].links").doesNotHaveJsonPath()
+                .jsonPath("$[0].tags").doesNotHaveJsonPath()
+                .jsonPath("$[1].id").isEqualTo(recipes.get(1).id())
+                .jsonPath("$[1].name").isEqualTo(recipes.get(1).name())
+                .jsonPath("$[1].ingredients").doesNotHaveJsonPath()
+                .jsonPath("$[1].links").doesNotHaveJsonPath()
+                .jsonPath("$[1].tags").doesNotHaveJsonPath()
+                .jsonPath("$[2]").doesNotHaveJsonPath();
     }
 
     @ParameterizedTest
@@ -176,5 +232,22 @@ class RecipeControllerIT {
 
     private static Stream<String> should_not_retrieve_recipes_when_query_filters_invalid() {
         return Stream.of("ingredientId=ch>", "propertyId=1111");
+    }
+
+    @Test
+    void should_retrieve_all_recipe_tags() {
+        List<String> recipeTags = List.of("First course", "Italian cuisine");
+        when(queryGateway.streamingQuery(new FindRecipeTagsQuery(), String.class)).thenReturn(Flux.fromIterable(recipeTags));
+
+        webTestClient.get()
+                .uri("/recipes/tags")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$[0].name").isEqualTo(recipeTags.get(0))
+                .jsonPath("$[1].name").isEqualTo(recipeTags.get(1))
+                .jsonPath("$[2]").doesNotHaveJsonPath();
     }
 }
