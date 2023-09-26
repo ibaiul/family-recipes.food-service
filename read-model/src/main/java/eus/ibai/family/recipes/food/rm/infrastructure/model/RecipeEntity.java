@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 @Data
@@ -25,6 +24,8 @@ public class RecipeEntity {
     @Transient
     private Set<IngredientEntity> ingredients;
 
+    private Set<String> tags;
+
     public RecipeEntity(String id, String name) {
         this(id, name, null);
     }
@@ -32,7 +33,7 @@ public class RecipeEntity {
     public RecipeEntity(String id, String name, Set<String> links) {
         this.id = id;
         this.name = name;
-        this.links = Objects.requireNonNullElseGet(links, HashSet::new);
+        this.links = links;
     }
 
     public RecipeEntity addIngredient(IngredientEntity ingredient) {
@@ -40,6 +41,19 @@ public class RecipeEntity {
             ingredients = new HashSet<>();
         }
         ingredients.add(ingredient);
+        return this;
+    }
+
+    public RecipeEntity addTag(String tag) {
+        if (tags == null) {
+            tags = new HashSet<>();
+        }
+        tags.add(tag);
+        return this;
+    }
+
+    public RecipeEntity removeTag(String tag) {
+        tags.remove(tag);
         return this;
     }
 }

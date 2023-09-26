@@ -43,7 +43,7 @@ class QueryDispatchedInterceptorTest {
 
     private static Stream<?> should_record_dispatched_queries() {
         return Stream.of(
-                new FindRecipesByQuery("id", null),
+                new FindRecipesByQuery("id", null, null),
                 new FindAllPropertiesQuery(),
                 new TestQuery()
         );

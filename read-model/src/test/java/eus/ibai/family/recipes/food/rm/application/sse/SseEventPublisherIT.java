@@ -54,6 +54,8 @@ class SseEventPublisherIT {
                 new RecipeUpdatedEvent(generateId(), "Avocado toast", Set.of("https://avocado.com")),
                 new RecipeIngredientAddedEvent(generateId(), new RecipeIngredient(generateId(), fixedTime())),
                 new RecipeIngredientRemovedEvent(generateId(), new RecipeIngredient(generateId(), fixedTime())),
+                new RecipeTagAddedEvent(generateId(), "First course"),
+                new RecipeTagRemovedEvent(generateId(), "First course"),
                 new RecipeDeletedEvent(generateId(), "Avocado toast"),
                 new IngredientCreatedEvent(generateId(), "Avocado"),
                 new IngredientUpdatedEvent(generateId(), "Avocado"),

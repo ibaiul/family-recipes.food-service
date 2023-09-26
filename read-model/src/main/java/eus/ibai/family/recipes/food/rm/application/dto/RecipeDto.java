@@ -7,13 +7,13 @@ import jakarta.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public record RecipeDto(@NotNull String id, @NotEmpty String name, Set<String> links, Set<RecipeIngredientDto> ingredients) {
+public record RecipeDto(@NotNull String id, @NotEmpty String name, Set<String> links, Set<RecipeIngredientDto> ingredients, Set<String> tags) {
 
     public static RecipeDto fromProjection(RecipeProjection recipe) {
         Set<RecipeIngredientDto> ingredients = recipe.ingredients().stream()
                 .map(RecipeIngredientDto::fromProjection)
                 .collect(Collectors.toSet());
-        return new RecipeDto(recipe.id(), recipe.name(), recipe.links(), ingredients);
+        return new RecipeDto(recipe.id(), recipe.name(), recipe.links(), ingredients, recipe.tags());
     }
 }
 
