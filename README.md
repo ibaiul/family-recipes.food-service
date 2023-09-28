@@ -17,9 +17,9 @@ Service in charge of managing and querying food entities, part of the Family Rec
   - Authenticate users
 - Food service
   - Manage recipes, ingredients and ingredient properties
-  - Query food types
+  - Query food entities
 - Meal service
-  - Record meals by family members
+  - Record meals eaten by family members
   - Display meals eaten, stats, reminders
 
 ## Next steps
