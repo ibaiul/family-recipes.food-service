@@ -48,7 +48,7 @@ public class SseEventPublisher {
 
     @EventHandler
     void handle(EventMessage<DomainEvent<String>> event) {
-        log.debug("Broadcasting domain event {} to {} subscribers", event.getPayload(), sink.currentSubscriberCount());
+        log.trace("Broadcasting domain event {} to {} subscribers", event.getPayload(), sink.currentSubscriberCount());
         ServerSentEvent<DomainEvent<String>> sseEvent = ServerSentEvent.<DomainEvent<String>>builder()
                 .id(event.getIdentifier())
                 .event(event.getPayload().type())
@@ -61,7 +61,7 @@ public class SseEventPublisher {
         log.debug("Creating SSE subscription");
         return sink.asFlux()
                 .onBackpressureDrop(sseEvent -> log.warn("Dropping event: {}", sseEvent.data()))
-                .doOnNext(sse -> log.debug("Publishing event {} - {} - {}", sse.id(), sse.event(), sse.data()))
+                .doOnNext(sse -> log.trace("Publishing event {} - {} - {}", sse.id(), sse.event(), sse.data()))
                 .doOnCancel(() -> log.debug("SSE subscription cancelled"))
                 .doOnTerminate(() -> log.debug("SSE subscription terminated"))
                 .doOnComplete(() -> log.debug("SSE subscription completed"));

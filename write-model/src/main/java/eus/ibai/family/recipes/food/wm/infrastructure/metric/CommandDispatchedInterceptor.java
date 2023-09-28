@@ -21,7 +21,7 @@ public class CommandDispatchedInterceptor implements MessageDispatchInterceptor<
     @Override
     public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(@Nonnull List<? extends CommandMessage<?>> messages) {
         return (index, commandMessage) -> {
-            log.debug("Command received: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
+            log.debug("Dispatched command: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
             DistributionSummary.builder("axon.command")
                     .tag("type", commandMessage.getPayloadType().getSimpleName())
                     .tag("status", "dispatched")

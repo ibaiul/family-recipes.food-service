@@ -5,7 +5,6 @@ import lombok.Getter;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.spring.stereotype.Aggregate;
 
@@ -14,6 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.time.LocalDateTime.now;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 
 @Getter
 @Aggregate
@@ -32,7 +33,7 @@ public class IngredientAggregate {
 
     @CommandHandler
     public IngredientAggregate(CreateIngredientCommand command) {
-        AggregateLifecycle.apply(new IngredientCreatedEvent(command.aggregateId(), command.ingredientName()));
+        apply(new IngredientCreatedEvent(command.aggregateId(), command.ingredientName()));
     }
 
     @EventSourcingHandler
@@ -46,7 +47,7 @@ public class IngredientAggregate {
         if (name.equals(command.ingredientName())) {
             return;
         }
-        AggregateLifecycle.apply(new IngredientUpdatedEvent(id, command.ingredientName()));
+        apply(new IngredientUpdatedEvent(id, command.ingredientName()));
     }
 
     @EventSourcingHandler
@@ -62,7 +63,7 @@ public class IngredientAggregate {
         }
 
         IngredientProperty addedIngredientProperty = new IngredientProperty(command.propertyId(), now(clock));
-        AggregateLifecycle.apply(new IngredientPropertyAddedEvent(id, addedIngredientProperty));
+        apply(new IngredientPropertyAddedEvent(id, addedIngredientProperty));
     }
 
     @EventSourcingHandler
@@ -75,7 +76,7 @@ public class IngredientAggregate {
     public void handle(RemoveIngredientPropertyCommand command) {
         IngredientPropertyEntity removedIngredientProperty = properties.stream().filter(ingredientProperty -> ingredientProperty.getPropertyId().equals(command.propertyId())).findFirst()
                 .orElseThrow(() -> new IngredientPropertyNotFoundException("Ingredient: " + this + ", Property: " + command.propertyId()));
-        AggregateLifecycle.apply(new IngredientPropertyRemovedEvent(id, new IngredientProperty(removedIngredientProperty.getPropertyId(), removedIngredientProperty.getAddedOn())));
+        apply(new IngredientPropertyRemovedEvent(id, new IngredientProperty(removedIngredientProperty.getPropertyId(), removedIngredientProperty.getAddedOn())));
     }
 
     @EventSourcingHandler
@@ -86,11 +87,11 @@ public class IngredientAggregate {
 
     @CommandHandler
     public void handle(DeleteIngredientCommand command) {
-        AggregateLifecycle.apply(new IngredientDeletedEvent(id, name));
+        apply(new IngredientDeletedEvent(id, name));
     }
 
     @EventSourcingHandler
     public void on(IngredientDeletedEvent event) {
-        AggregateLifecycle.markDeleted();
+        markDeleted();
     }
 }
