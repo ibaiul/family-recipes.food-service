@@ -5,7 +5,6 @@ import lombok.Getter;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.spring.stereotype.Aggregate;
 
@@ -15,6 +14,7 @@ import java.util.Set;
 
 import static java.time.LocalDateTime.now;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 
 @Getter
 @Aggregate
@@ -123,6 +123,6 @@ public class RecipeAggregate {
 
     @EventSourcingHandler
     public void on(RecipeDeletedEvent event) {
-        AggregateLifecycle.markDeleted();
+        markDeleted();
     }
 }

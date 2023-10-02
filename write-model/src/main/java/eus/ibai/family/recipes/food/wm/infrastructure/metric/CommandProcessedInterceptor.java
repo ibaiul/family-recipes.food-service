@@ -19,7 +19,7 @@ public class CommandProcessedInterceptor implements MessageHandlerInterceptor<Co
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork, @Nonnull InterceptorChain interceptorChain) throws Exception {
         CommandMessage<?> commandMessage = unitOfWork.getMessage();
-        log.debug("Command received: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
+        log.debug("Processing command: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
         unitOfWork.afterCommit(u -> DistributionSummary.builder("axon.command")
                 .tag("type", commandMessage.getPayloadType().getSimpleName())
                 .tag("status", "processed")
