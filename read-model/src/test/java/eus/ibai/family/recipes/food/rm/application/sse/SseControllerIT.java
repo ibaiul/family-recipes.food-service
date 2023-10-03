@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import eus.ibai.family.recipes.food.event.DomainEvent;
 import eus.ibai.family.recipes.food.event.IngredientCreatedEvent;
 import eus.ibai.family.recipes.food.event.RecipeCreatedEvent;
+import eus.ibai.family.recipes.food.rm.infrastructure.config.SecurityConfig;
 import eus.ibai.family.recipes.food.security.*;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
 
 @WebFluxTest(controllers = {SseController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class SseControllerIT {
 
     @MockBean

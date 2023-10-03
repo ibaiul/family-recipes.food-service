@@ -6,6 +6,7 @@ import eus.ibai.family.recipes.food.wm.application.dto.AddIngredientPropertyDto;
 import eus.ibai.family.recipes.food.wm.application.dto.CreateIngredientDto;
 import eus.ibai.family.recipes.food.wm.application.dto.UpdateIngredientDto;
 import eus.ibai.family.recipes.food.wm.domain.ingredient.*;
+import eus.ibai.family.recipes.food.wm.infrastructure.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {IngredientController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class IngredientControllerIT {
 
     @MockBean

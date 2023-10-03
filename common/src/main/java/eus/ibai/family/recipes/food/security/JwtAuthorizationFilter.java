@@ -67,7 +67,7 @@ public class JwtAuthorizationFilter implements WebFilter {
                 .flatMap(jwtService::getUserDetails)
                 .map(userDetails -> {
                     Collection<SimpleGrantedAuthority> authorities = userDetails.getT2().stream()
-                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .map(SimpleGrantedAuthority::new)
                             .toList();
                     return new UsernamePasswordAuthenticationToken(userDetails.getT1(), null, authorities);
                 });

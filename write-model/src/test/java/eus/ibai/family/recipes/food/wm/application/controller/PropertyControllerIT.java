@@ -7,6 +7,7 @@ import eus.ibai.family.recipes.food.wm.application.dto.UpdatePropertyDto;
 import eus.ibai.family.recipes.food.wm.domain.property.PropertyAlreadyExistsException;
 import eus.ibai.family.recipes.food.wm.domain.property.PropertyAttachedToIngredientException;
 import eus.ibai.family.recipes.food.wm.domain.property.PropertyService;
+import eus.ibai.family.recipes.food.wm.infrastructure.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {PropertyController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class PropertyControllerIT {
 
     @MockBean

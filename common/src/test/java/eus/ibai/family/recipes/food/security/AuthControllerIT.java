@@ -23,7 +23,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
 
 @WebFluxTest(controllers = {AuthController.class, TestController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class AuthControllerIT {
 
     @Autowired

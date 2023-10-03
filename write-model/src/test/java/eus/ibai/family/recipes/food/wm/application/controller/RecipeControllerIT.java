@@ -7,10 +7,14 @@ import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeTagDto;
 import eus.ibai.family.recipes.food.wm.application.dto.CreateRecipeDto;
 import eus.ibai.family.recipes.food.wm.application.dto.UpdateRecipeDto;
 import eus.ibai.family.recipes.food.wm.domain.recipe.*;
+import eus.ibai.family.recipes.food.wm.infrastructure.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -31,7 +35,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {RecipeController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class RecipeControllerIT {
 
     @MockBean

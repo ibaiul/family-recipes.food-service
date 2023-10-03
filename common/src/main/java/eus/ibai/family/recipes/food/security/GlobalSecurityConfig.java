@@ -1,14 +1,17 @@
 package eus.ibai.family.recipes.food.security;
 
 import eus.ibai.family.recipes.food.util.Temporary;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity.AuthorizeExchangeSpec;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
@@ -24,7 +27,8 @@ import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-public class SecurityConfig {
+@RequiredArgsConstructor
+public class GlobalSecurityConfig {
 
     private static final List<Tuple2<HttpMethod, String>> AUTH_ALLOW_LIST = List.of(
             Tuples.of(HttpMethod.GET, "/actuator/health"),
@@ -40,19 +44,43 @@ public class SecurityConfig {
     );
 
     @Bean
-    SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, ReactiveAuthenticationManager authenticationManager) {
-        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, AUTH_ALLOW_LIST);
+    SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, List<PathAuthorizations> pathAuthorizations) {
+        List<Tuple2<HttpMethod, String>> aggregatedAuthAllowList = pathAuthorizations.stream()
+                .map(PathAuthorizations::paths)
+                .flatMap(List::stream)
+                .filter(pathAuthorization -> pathAuthorization.requiredRoles() == null)
+                .map(pathAuthorization -> Tuples.of(pathAuthorization.httpMethod(), pathAuthorization.path()))
+                .toList();
+        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, aggregatedAuthAllowList);
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
-                .authorizeExchange(it -> {
-                            AUTH_ALLOW_LIST.forEach(pathMatcherTuple -> it.pathMatchers(pathMatcherTuple.getT1(), pathMatcherTuple.getT2()).permitAll());
-                            it.anyExchange().authenticated(); // Default authenticated to avoid OWASP A01:2021 – Broken Access Control
-                        }
-                )
+                .authorizeExchange(it -> setUpPathAuthorizations(it, pathAuthorizations))
                 .addFilterAt(jwtAuthorizationFilter, SecurityWebFiltersOrder.HTTP_BASIC)
                 .build();
+    }
+
+    @Bean
+    PathAuthorizations commonOpenPaths() {
+        List<PathAuthorization> pathAuthorizationList = AUTH_ALLOW_LIST.stream()
+                .map(openPath -> new PathAuthorization(openPath.getT1(), openPath.getT2()))
+                .toList();
+        return new PathAuthorizations(pathAuthorizationList);
+    }
+
+    private void setUpPathAuthorizations(AuthorizeExchangeSpec authorizeExchangeSpec, List<PathAuthorizations> pathAuthorizations) {
+        pathAuthorizations.stream()
+                .map(PathAuthorizations::paths)
+                .flatMap(List::stream)
+                .forEach(pathAuthorization -> {
+                    if (pathAuthorization.requiredRoles() != null) {
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.path()).hasAnyRole(pathAuthorization.requiredRoles());
+                    } else {
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.path()).permitAll();
+                    }
+                });
+        authorizeExchangeSpec.anyExchange().denyAll();
     }
 
     @Bean
