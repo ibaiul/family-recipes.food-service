@@ -6,7 +6,7 @@ Implements the query responsibility of the CQRS pattern.
 
 ## Next steps
 ### Features
-- Query Recipes by multiple ingredients|properties/tags
+- Query Recipes by multiple tags|ingredients|properties
 - Query Ingredients by multiple properties
 
 ### Tech
