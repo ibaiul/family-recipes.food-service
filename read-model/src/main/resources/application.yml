@@ -52,12 +52,12 @@ users:
   - username: user1
     password: $2a$10$jw9IHXo.Bnm6yyZ0ggR2zut300ZYfA9b5zyhmfVI6p6YzJdZp6SqO
     roles:
-      - USER
+      - FAMILY_MEMBER
   - username: user2
     password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
     roles:
-      - USER
-      - ADMIN
+      - FAMILY_MEMBER
+      - FAMILY_ADMIN
 
 newrelic:
   enabled: true

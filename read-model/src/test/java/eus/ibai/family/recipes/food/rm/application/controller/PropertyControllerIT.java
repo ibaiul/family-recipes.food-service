@@ -5,6 +5,7 @@ import eus.ibai.family.recipes.food.rm.application.dto.BasicPropertyDto;
 import eus.ibai.family.recipes.food.rm.domain.property.FindAllPropertiesQuery;
 import eus.ibai.family.recipes.food.rm.domain.property.FindPropertyByIdQuery;
 import eus.ibai.family.recipes.food.rm.domain.property.PropertyProjection;
+import eus.ibai.family.recipes.food.rm.infrastructure.config.SecurityConfig;
 import eus.ibai.family.recipes.food.security.*;
 import org.axonframework.extensions.reactor.queryhandling.gateway.ReactorQueryGateway;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +28,7 @@ import static eus.ibai.family.recipes.food.util.Utils.generateId;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {PropertyController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class PropertyControllerIT {
 
     @MockBean

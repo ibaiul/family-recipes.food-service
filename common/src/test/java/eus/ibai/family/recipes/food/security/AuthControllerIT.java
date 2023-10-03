@@ -1,6 +1,7 @@
 package eus.ibai.family.recipes.food.security;
 
 import eus.ibai.family.recipes.food.test.TestController;
+import eus.ibai.family.recipes.food.test.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,7 +24,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
 
 @WebFluxTest(controllers = {AuthController.class, TestController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, TestSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class AuthControllerIT {
 
     @Autowired
@@ -95,23 +96,13 @@ class AuthControllerIT {
                 .expectHeader().valueMatches(WWW_AUTHENTICATE, "Bearer");
     }
 
-
-    @Test
-    void should_deny_access_when_requesting_protected_endpoint_without_credentials() {
-        webTestClient.get()
-                .uri("/test")
-                .exchange()
-                .expectStatus().isUnauthorized()
-                .expectHeader().valueMatches(WWW_AUTHENTICATE, "Bearer");
-    }
-
     @Test
     void should_deny_access_when_access_token_has_expired() {
         String accessToken = authenticate(webTestClient).accessToken();
 
         await().pollInterval(100, MILLISECONDS).atMost(accessTokenExpirationTime * 2, SECONDS).untilAsserted(() ->
                 webTestClient.get()
-                        .uri("/test/a")
+                        .uri("/test/protected")
                         .header(AUTHORIZATION, "Bearer " + accessToken)
                         .exchange()
                         .expectStatus().isUnauthorized()

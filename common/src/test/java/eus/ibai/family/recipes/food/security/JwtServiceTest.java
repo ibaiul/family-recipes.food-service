@@ -128,7 +128,7 @@ class JwtServiceTest {
     }
 
     private User createUser() {
-        return new User("username", "password", Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")));
+        return new User("username", "password", Collections.singleton(new SimpleGrantedAuthority("ROLE_FAMILY_MEMBER")));
     }
 
     private JwtProperties createJwtProperties() {

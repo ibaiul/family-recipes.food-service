@@ -11,7 +11,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
 
     @GetMapping
-    public void respondOk() {
-        log.debug("Reached test controller!!");
+    public void respondOkRoot() {
+        log.debug("Reached root path of the test controller!!");
+    }
+
+    @GetMapping("/public")
+    public void respondOkPublic() {
+        log.debug("Reached public path of the test controller!!");
+    }
+
+    @GetMapping("/protected")
+    public void respondOkProtected() {
+        log.debug("Reached protected path of the test controller!!");
+    }
+
+    @GetMapping("/admin")
+    public void respondOkAdmin() {
+        log.debug("Reached admin path of the test controller!!");
     }
 }

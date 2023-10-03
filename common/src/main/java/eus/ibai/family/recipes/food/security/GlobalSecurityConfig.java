@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UserDetailsRepositoryReactive
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity.AuthorizeExchangeSpec;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
@@ -17,42 +18,59 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-public class SecurityConfig {
-
-    private static final List<Tuple2<HttpMethod, String>> AUTH_ALLOW_LIST = List.of(
-            Tuples.of(HttpMethod.GET, "/actuator/health"),
-            Tuples.of(HttpMethod.GET, "/actuator/health/readiness"),
-            Tuples.of(HttpMethod.GET, "/actuator/health/liveness"),
-            Tuples.of(HttpMethod.GET, "/actuator/info"),
-            Tuples.of(HttpMethod.POST, "/authentication/login"),
-            Tuples.of(HttpMethod.POST, "/authentication/refresh"),
-            Tuples.of(HttpMethod.GET, "/v3/api-docs/**"),
-            Tuples.of(HttpMethod.GET, "/v3/api-docs.yaml"),
-            Tuples.of(HttpMethod.GET, "/swagger-ui/**"),
-            Tuples.of(HttpMethod.GET, "/swagger-ui.html")
-    );
+public class GlobalSecurityConfig {
 
     @Bean
-    SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, ReactiveAuthenticationManager authenticationManager) {
-        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, AUTH_ALLOW_LIST);
+    SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, List<PathAuthorizations> pathAuthorizations) {
+        List<PathAuthorization> publicPaths = pathAuthorizations.stream()
+                .map(PathAuthorizations::paths)
+                .flatMap(List::stream)
+                .filter(pathAuthorization -> pathAuthorization.requiredRoles() == null)
+                .toList();
+        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, publicPaths);
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
-                .authorizeExchange(it -> {
-                            AUTH_ALLOW_LIST.forEach(pathMatcherTuple -> it.pathMatchers(pathMatcherTuple.getT1(), pathMatcherTuple.getT2()).permitAll());
-                            it.anyExchange().authenticated(); // Default authenticated to avoid OWASP A01:2021 – Broken Access Control
-                        }
-                )
+                .authorizeExchange(it -> setUpPathAuthorizations(it, pathAuthorizations))
                 .addFilterAt(jwtAuthorizationFilter, SecurityWebFiltersOrder.HTTP_BASIC)
                 .build();
+    }
+
+    @Bean
+    PathAuthorizations commonOpenPaths() {
+        List<PathAuthorization> pathAuthorizationList = List.of(
+                new PathAuthorization(HttpMethod.GET, "/actuator/health"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/health/readiness"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/health/liveness"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/info"),
+                new PathAuthorization(HttpMethod.POST, "/authentication/login"),
+                new PathAuthorization(HttpMethod.POST, "/authentication/refresh"),
+                new PathAuthorization(HttpMethod.GET, "/v3/api-docs/**"),
+                new PathAuthorization(HttpMethod.GET, "/v3/api-docs.yaml"),
+                new PathAuthorization(HttpMethod.GET, "/swagger-ui/**"),
+                new PathAuthorization(HttpMethod.GET, "/swagger-ui.html")
+        );
+        return new PathAuthorizations(pathAuthorizationList);
+    }
+
+    private void setUpPathAuthorizations(AuthorizeExchangeSpec authorizeExchangeSpec, List<PathAuthorizations> pathAuthorizations) {
+        pathAuthorizations.stream()
+                .map(PathAuthorizations::paths)
+                .flatMap(List::stream)
+                .forEach(pathAuthorization -> {
+                    if (pathAuthorization.requiredRoles() != null) {
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()).hasAnyRole(pathAuthorization.requiredRoles());
+                    } else {
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()).permitAll();
+                    }
+                });
+        authorizeExchangeSpec.anyExchange().denyAll();
     }
 
     @Bean

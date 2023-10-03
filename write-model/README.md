@@ -9,11 +9,11 @@ Global invariants are enforced using "Set Based Consistency Validation".
 
 ## Next Steps
 ### Features
-- Create recipe tags so that recipes can be queried by tag as well, e.g. vegan, starter, main course, dessert, ...
 - Build shopping lists from recipes or adding ingredients manually
 
 ### Tech
 - Deepen Axon framework integration
+  - Distributed command bus
   - Sagas
   - Snapshots
   - Event versioning (Event Upcasting)

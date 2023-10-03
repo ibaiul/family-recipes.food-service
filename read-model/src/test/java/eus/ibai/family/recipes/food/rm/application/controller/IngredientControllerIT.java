@@ -7,6 +7,7 @@ import eus.ibai.family.recipes.food.rm.domain.ingredient.FindIngredientByIdQuery
 import eus.ibai.family.recipes.food.rm.domain.ingredient.FindIngredientsByQuery;
 import eus.ibai.family.recipes.food.rm.domain.ingredient.IngredientProjection;
 import eus.ibai.family.recipes.food.rm.domain.ingredient.IngredientPropertyProjection;
+import eus.ibai.family.recipes.food.rm.infrastructure.config.SecurityConfig;
 import eus.ibai.family.recipes.food.security.*;
 import org.axonframework.extensions.reactor.queryhandling.gateway.ReactorQueryGateway;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +32,7 @@ import static eus.ibai.family.recipes.food.util.Utils.generateId;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {IngredientController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
 class IngredientControllerIT {
 
     @MockBean

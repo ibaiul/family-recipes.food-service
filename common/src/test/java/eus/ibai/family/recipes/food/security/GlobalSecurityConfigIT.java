@@ -15,14 +15,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE;
 
 @SpringBootTest(webEnvironment = NONE)
-class SecurityConfigIT {
+class GlobalSecurityConfigIT {
 
     @Autowired
     private SecurityWebFilterChain securityWebFilterChain;
 
     @Test
-    void should_allow_list_safe_endpoints() {
-        List<Tuple2<HttpMethod, String>> expectedAllowList = List.of(
+    void should_allow_list_public_endpoints() {
+        List<Tuple2<HttpMethod, String>> expectedAllowedPublicPaths = List.of(
+                Tuples.of(HttpMethod.GET, "/test/public/**"),
                 Tuples.of(HttpMethod.GET, "/actuator/health"),
                 Tuples.of(HttpMethod.GET, "/actuator/health/readiness"),
                 Tuples.of(HttpMethod.GET, "/actuator/health/liveness"),
@@ -37,11 +38,9 @@ class SecurityConfigIT {
 
         securityWebFilterChain.getWebFilters()
                 .filter(webFilter -> webFilter instanceof JwtAuthorizationFilter)
+                .cast(JwtAuthorizationFilter.class)
                 .as(StepVerifier::create)
-                .assertNext(webFilter -> {
-                    JwtAuthorizationFilter authFilter = (JwtAuthorizationFilter) webFilter;
-                    assertThat(authFilter.getAuthAllowList()).isEqualTo(expectedAllowList);
-                })
+                .assertNext(authFilter -> assertThat(authFilter.getPublicPaths()).isEqualTo(expectedAllowedPublicPaths))
                 .verifyComplete();
     }
 }
