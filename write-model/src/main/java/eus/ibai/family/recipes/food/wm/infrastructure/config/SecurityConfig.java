@@ -16,15 +16,15 @@ public class SecurityConfig {
     @Bean
     PathAuthorizations distributedCommandBusPathAuthorizations() {
         List<PathAuthorization> pathAuthorizations = List.of(
-                new PathAuthorization(HttpMethod.POST, "/recipes/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.PUT, "/recipes/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.DELETE, "/recipes/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.POST, "/ingredients/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.PUT, "/ingredients/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.DELETE, "/ingredients/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.POST, "/properties/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.PUT, "/properties/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.DELETE, "/properties/**", new String[]{"USER"})
+                new PathAuthorization(HttpMethod.POST, "/recipes/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.PUT, "/recipes/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.DELETE, "/recipes/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.POST, "/ingredients/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.PUT, "/ingredients/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.DELETE, "/ingredients/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.POST, "/properties/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.PUT, "/properties/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.DELETE, "/properties/**", new String[]{"FAMILY_MEMBER"})
         );
         return new PathAuthorizations(pathAuthorizations);
     }

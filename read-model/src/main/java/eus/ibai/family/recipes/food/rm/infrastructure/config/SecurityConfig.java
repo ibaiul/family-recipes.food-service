@@ -16,10 +16,10 @@ public class SecurityConfig {
     @Bean
     PathAuthorizations distributedCommandBusPathAuthorizations() {
         List<PathAuthorization> pathAuthorizations = List.of(
-                new PathAuthorization(HttpMethod.GET, "/recipes/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.GET, "/ingredients/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.GET, "/properties/**", new String[]{"USER"}),
-                new PathAuthorization(HttpMethod.GET, "/events/sse", new String[]{"USER"})
+                new PathAuthorization(HttpMethod.GET, "/recipes/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.GET, "/ingredients/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.GET, "/properties/**", new String[]{"FAMILY_MEMBER"}),
+                new PathAuthorization(HttpMethod.GET, "/events/sse", new String[]{"FAMILY_MEMBER"})
         );
         return new PathAuthorizations(pathAuthorizations);
     }

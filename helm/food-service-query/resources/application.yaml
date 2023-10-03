@@ -26,12 +26,12 @@ users:
   - username: ${IN_MEMORY_USER_NAME_1}
     password: ${IN_MEMORY_USER_PASS_1}
     roles:
-      - USER
+      - FAMILY_MEMBER
       - ADMIN
   - username: ${IN_MEMORY_USER_NAME_2}
     password: ${IN_MEMORY_USER_PASS_2}
     roles:
-      - USER
+      - FAMILY_MEMBER
 
 newrelic:
   app:

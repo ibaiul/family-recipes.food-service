@@ -70,7 +70,7 @@ class JwtAuthorizationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/not-allowed-endpoint-1")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer validToken"));
         when(filterChain.filter(exchange)).thenReturn(Mono.empty());
-        when(jwtService.getUserDetails("validToken")).thenReturn(Mono.just(Tuples.of("username", List.of("ROLE_USER"))));
+        when(jwtService.getUserDetails("validToken")).thenReturn(Mono.just(Tuples.of("username", List.of("ROLE_FAMILY_MEMBER"))));
 
         authorizationFilter.filter(exchange, filterChain)
                 .as(StepVerifier::create)
