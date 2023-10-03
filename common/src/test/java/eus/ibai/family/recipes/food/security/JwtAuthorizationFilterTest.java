@@ -15,7 +15,6 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.util.List;
@@ -27,10 +26,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationFilterTest {
 
-    private final List<Tuple2<HttpMethod, String>> authAllowList = List.of(
-            Tuples.of(HttpMethod.GET, "/allowed-endpoint-1"),
-            Tuples.of(HttpMethod.GET, "/allowed-endpoint-2"),
-            Tuples.of(HttpMethod.GET, "/allowed-prefix/**")
+    private final List<PathAuthorization> publicPaths = List.of(
+            new PathAuthorization(HttpMethod.GET, "/public-endpoint-1"),
+            new PathAuthorization(HttpMethod.GET, "/public-endpoint-2"),
+            new PathAuthorization(HttpMethod.GET, "/public-endpoint-prefix/**")
     );
 
     @Mock
@@ -43,12 +42,12 @@ class JwtAuthorizationFilterTest {
 
     @BeforeEach
     void beforeEach() {
-        authorizationFilter = new JwtAuthorizationFilter(jwtService, authAllowList);
+        authorizationFilter = new JwtAuthorizationFilter(jwtService, publicPaths);
     }
 
     @ParameterizedTest
     @MethodSource
-    void should_allow_requests_to_open_endpoints_without_authentication(String url) {
+    void should_allow_requests_to_public_endpoints_without_authentication(String url) {
         MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get(url));
         when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
@@ -61,13 +60,13 @@ class JwtAuthorizationFilterTest {
         assertThat(exchange.getResponse().getHeaders()).doesNotContainKey(HttpHeaders.WWW_AUTHENTICATE);
     }
 
-    private static Stream<String> should_allow_requests_to_open_endpoints_without_authentication() {
-        return Stream.of("/allowed-endpoint-1", "/allowed-endpoint-2", "/allowed-prefix/endpoint");
+    private static Stream<String> should_allow_requests_to_public_endpoints_without_authentication() {
+        return Stream.of("/public-endpoint-1", "/public-endpoint-2", "/public-endpoint-prefix/foo");
     }
 
     @Test
     void should_allow_requests_to_protected_endpoints_with_authentication() {
-        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/not-allowed-endpoint-1")
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/protected-endpoint-1")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer validToken"));
         when(filterChain.filter(exchange)).thenReturn(Mono.empty());
         when(jwtService.getUserDetails("validToken")).thenReturn(Mono.just(Tuples.of("username", List.of("ROLE_FAMILY_MEMBER"))));
@@ -83,7 +82,7 @@ class JwtAuthorizationFilterTest {
 
     @Test
     void should_not_allow_requests_to_protected_endpoints_without_authentication() {
-        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/not-allowed-endpoint-1"));
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/protected-endpoint-1"));
 
         authorizationFilter.filter(exchange, filterChain)
                 .as(StepVerifier::create)

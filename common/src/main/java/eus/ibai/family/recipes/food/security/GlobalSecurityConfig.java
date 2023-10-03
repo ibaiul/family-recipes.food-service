@@ -1,7 +1,6 @@
 package eus.ibai.family.recipes.food.security;
 
 import eus.ibai.family.recipes.food.util.Temporary;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,38 +18,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-@RequiredArgsConstructor
 public class GlobalSecurityConfig {
-
-    private static final List<Tuple2<HttpMethod, String>> AUTH_ALLOW_LIST = List.of(
-            Tuples.of(HttpMethod.GET, "/actuator/health"),
-            Tuples.of(HttpMethod.GET, "/actuator/health/readiness"),
-            Tuples.of(HttpMethod.GET, "/actuator/health/liveness"),
-            Tuples.of(HttpMethod.GET, "/actuator/info"),
-            Tuples.of(HttpMethod.POST, "/authentication/login"),
-            Tuples.of(HttpMethod.POST, "/authentication/refresh"),
-            Tuples.of(HttpMethod.GET, "/v3/api-docs/**"),
-            Tuples.of(HttpMethod.GET, "/v3/api-docs.yaml"),
-            Tuples.of(HttpMethod.GET, "/swagger-ui/**"),
-            Tuples.of(HttpMethod.GET, "/swagger-ui.html")
-    );
 
     @Bean
     SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, List<PathAuthorizations> pathAuthorizations) {
-        List<Tuple2<HttpMethod, String>> aggregatedAuthAllowList = pathAuthorizations.stream()
+        List<PathAuthorization> publicPaths = pathAuthorizations.stream()
                 .map(PathAuthorizations::paths)
                 .flatMap(List::stream)
                 .filter(pathAuthorization -> pathAuthorization.requiredRoles() == null)
-                .map(pathAuthorization -> Tuples.of(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()))
                 .toList();
-        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, aggregatedAuthAllowList);
+        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, publicPaths);
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
@@ -62,9 +44,18 @@ public class GlobalSecurityConfig {
 
     @Bean
     PathAuthorizations commonOpenPaths() {
-        List<PathAuthorization> pathAuthorizationList = AUTH_ALLOW_LIST.stream()
-                .map(openPath -> new PathAuthorization(openPath.getT1(), openPath.getT2()))
-                .toList();
+        List<PathAuthorization> pathAuthorizationList = List.of(
+                new PathAuthorization(HttpMethod.GET, "/actuator/health"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/health/readiness"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/health/liveness"),
+                new PathAuthorization(HttpMethod.GET, "/actuator/info"),
+                new PathAuthorization(HttpMethod.POST, "/authentication/login"),
+                new PathAuthorization(HttpMethod.POST, "/authentication/refresh"),
+                new PathAuthorization(HttpMethod.GET, "/v3/api-docs/**"),
+                new PathAuthorization(HttpMethod.GET, "/v3/api-docs.yaml"),
+                new PathAuthorization(HttpMethod.GET, "/swagger-ui/**"),
+                new PathAuthorization(HttpMethod.GET, "/swagger-ui.html")
+        );
         return new PathAuthorizations(pathAuthorizationList);
     }
 

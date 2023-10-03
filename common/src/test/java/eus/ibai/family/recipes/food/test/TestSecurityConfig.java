@@ -15,7 +15,7 @@ public class TestSecurityConfig {
     @Bean
     PathAuthorizations testPathAuthorizations() {
         List<PathAuthorization> pathAuthorizations = List.of(
-                new PathAuthorization(HttpMethod.GET, "/test/open/**"),
+                new PathAuthorization(HttpMethod.GET, "/test/public/**"),
                 new PathAuthorization(HttpMethod.GET, "/test/protected", new String[]{Roles.FAMILY_MEMBER}),
                 new PathAuthorization(HttpMethod.GET, "/test/admin", new String[]{Roles.FAMILY_ADMIN})
         );

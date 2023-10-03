@@ -28,17 +28,17 @@ class RbacControllerIT {
     }
 
     @Test
-    void should_allow_access_when_requesting_open_endpoint_without_credentials() {
+    void should_allow_access_when_requesting_public_endpoint_without_credentials() {
         webTestClient.get()
-                .uri("/test/open")
+                .uri("/test/public")
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
-    void should_allow_access_when_requesting_open_endpoint_and_authenticated() {
+    void should_allow_access_when_requesting_public_endpoint_and_authenticated() {
         webTestClient.get()
-                .uri("/test/open")
+                .uri("/test/public")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
                 .expectStatus().isOk();

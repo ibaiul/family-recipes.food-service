@@ -32,12 +32,12 @@ public class JwtAuthorizationFilter implements WebFilter {
 
     private final JwtService jwtService;
 
-    private final List<Tuple2<HttpMethod, PathPattern>> authAllowList;
+    private final List<Tuple2<HttpMethod, PathPattern>> publicPaths;
 
-    public JwtAuthorizationFilter(JwtService jwtService, List<Tuple2<HttpMethod, String>> authAllowList) {
+    public JwtAuthorizationFilter(JwtService jwtService, List<PathAuthorization> publicPaths) {
         this.jwtService = jwtService;
-        this.authAllowList = authAllowList.stream()
-                .map(t -> Tuples.of(t.getT1(), new PathPatternParser().parse(t.getT2())))
+        this.publicPaths = publicPaths.stream()
+                .map(pathAuthorization -> Tuples.of(pathAuthorization.httpMethod(), new PathPatternParser().parse(pathAuthorization.pathPattern())))
                 .toList();
     }
 
@@ -80,12 +80,12 @@ public class JwtAuthorizationFilter implements WebFilter {
     }
 
     private Mono<Boolean> requestDoesNotRequireAuth(ServerHttpRequest request) {
-        return Flux.fromIterable(authAllowList)
-                .any(allowList -> allowList.getT2().matches(request.getPath().pathWithinApplication()) && allowList.getT1() == request.getMethod());
+        return Flux.fromIterable(publicPaths)
+                .any(publicPath -> publicPath.getT2().matches(request.getPath().pathWithinApplication()) && publicPath.getT1() == request.getMethod());
     }
 
-    public List<Tuple2<HttpMethod, String>> getAuthAllowList() {
-        return authAllowList.stream()
+    public List<Tuple2<HttpMethod, String>> getPublicPaths() {
+        return publicPaths.stream()
                 .map(t -> Tuples.of(t.getT1(), t.getT2().getPatternString()))
                 .toList();
     }
