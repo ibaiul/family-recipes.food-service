@@ -17,7 +17,7 @@ users:
     password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
     roles:
       - FAMILY_MEMBER
-      - ADMIN
+      - FAMILY_ADMIN
 
 newrelic:
   enabled: false

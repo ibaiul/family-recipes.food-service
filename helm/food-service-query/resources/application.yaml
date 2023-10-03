@@ -27,7 +27,7 @@ users:
     password: ${IN_MEMORY_USER_PASS_1}
     roles:
       - FAMILY_MEMBER
-      - ADMIN
+      - FAMILY_ADMIN
   - username: ${IN_MEMORY_USER_NAME_2}
     password: ${IN_MEMORY_USER_PASS_2}
     roles:
