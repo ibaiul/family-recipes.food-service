@@ -48,7 +48,7 @@ public class GlobalSecurityConfig {
                 .map(PathAuthorizations::paths)
                 .flatMap(List::stream)
                 .filter(pathAuthorization -> pathAuthorization.requiredRoles() == null)
-                .map(pathAuthorization -> Tuples.of(pathAuthorization.httpMethod(), pathAuthorization.path()))
+                .map(pathAuthorization -> Tuples.of(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()))
                 .toList();
         JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, aggregatedAuthAllowList);
         return http
@@ -74,9 +74,9 @@ public class GlobalSecurityConfig {
                 .flatMap(List::stream)
                 .forEach(pathAuthorization -> {
                     if (pathAuthorization.requiredRoles() != null) {
-                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.path()).hasAnyRole(pathAuthorization.requiredRoles());
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()).hasAnyRole(pathAuthorization.requiredRoles());
                     } else {
-                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.path()).permitAll();
+                        authorizeExchangeSpec.pathMatchers(pathAuthorization.httpMethod(), pathAuthorization.pathPattern()).permitAll();
                     }
                 });
         authorizeExchangeSpec.anyExchange().denyAll();
