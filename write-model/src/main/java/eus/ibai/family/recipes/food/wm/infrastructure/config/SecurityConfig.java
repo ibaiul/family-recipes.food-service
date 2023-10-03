@@ -6,12 +6,10 @@ import eus.ibai.family.recipes.food.security.Roles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 
 import java.util.List;
 
 @Configuration
-@EnableWebFluxSecurity
 public class SecurityConfig {
 
     private static final String RECIPES_PATH_PATTERN = "/recipes/**";
