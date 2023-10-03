@@ -19,7 +19,7 @@ public class SecurityConfig {
     private static final String PROPERTIES_PATH_PATTERN = "/properties/**";
 
     @Bean
-    PathAuthorizations distributedCommandBusPathAuthorizations() {
+    PathAuthorizations pathAuthorizations() {
         List<PathAuthorization> pathAuthorizations = List.of(
                 new PathAuthorization(HttpMethod.POST, RECIPES_PATH_PATTERN, new String[]{Roles.FAMILY_MEMBER}),
                 new PathAuthorization(HttpMethod.PUT, RECIPES_PATH_PATTERN, new String[]{Roles.FAMILY_MEMBER}),

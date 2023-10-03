@@ -13,7 +13,7 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    PathAuthorizations distributedCommandBusPathAuthorizations() {
+    PathAuthorizations pathAuthorizations() {
         List<PathAuthorization> pathAuthorizations = List.of(
                 new PathAuthorization(HttpMethod.GET, "/recipes/**", new String[]{Roles.FAMILY_MEMBER}),
                 new PathAuthorization(HttpMethod.GET, "/ingredients/**", new String[]{Roles.FAMILY_MEMBER}),
