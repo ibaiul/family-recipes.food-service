@@ -6,6 +6,8 @@ dependencies {
         exclude group:"io.r2dbc", module:"r2dbc-spi"
     }
 
+    implementation 'org.springframework.cloud:spring-cloud-starter-zookeeper-discovery:4.0.1'
+    implementation 'org.axonframework.extensions.springcloud:axon-springcloud-spring-boot-autoconfigure:4.8.0'
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     implementation ("org.axonframework:axon-spring-boot-starter:$axonVersion") {
         exclude group:"org.axonframework", module:"axon-server-connector"

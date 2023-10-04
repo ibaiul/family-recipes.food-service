@@ -1,8 +1,21 @@
 spring:
   datasource:
     url: jdbc:postgresql://db:5432/local-command-db
+#    url: jdbc:postgresql://localhost:5432/local-command-db
   flyway:
     url: jdbc:postgresql://db:5432/local-command-db
+#    url: jdbc:postgresql://localhost:5432/local-command-db
+  cloud:
+    zookeeper:
+      connect-string: zk1:2181
+#      connect-string: localhost:21811
+
+axon:
+  distributed:
+    enabled: true
+    spring-cloud:
+      rest-mode-url: /member-capabilities
+      #fallback-to-http-get: true
 
 newrelic:
   enabled: false

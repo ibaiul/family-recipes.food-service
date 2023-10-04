@@ -20,11 +20,14 @@ public class CommandProcessedInterceptor implements MessageHandlerInterceptor<Co
     public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork, @Nonnull InterceptorChain interceptorChain) throws Exception {
         CommandMessage<?> commandMessage = unitOfWork.getMessage();
         log.debug("Processing command: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
-        unitOfWork.afterCommit(u -> DistributionSummary.builder("axon.command")
-                .tag("type", commandMessage.getPayloadType().getSimpleName())
-                .tag("status", "processed")
-                .register(meterRegistry)
-                .record(1));
+        unitOfWork.afterCommit(u -> {
+            log.debug("Processed command: {}, Payload: {}", commandMessage.getPayloadType(), commandMessage.getPayload());
+            DistributionSummary.builder("axon.command")
+                    .tag("type", commandMessage.getPayloadType().getSimpleName())
+                    .tag("status", "processed")
+                    .register(meterRegistry)
+                    .record(1);
+        });
         return interceptorChain.proceed();
     }
 }
