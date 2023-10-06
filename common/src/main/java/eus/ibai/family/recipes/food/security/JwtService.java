@@ -39,8 +39,6 @@ public class JwtService {
 
     private static final String ROLE_CLAIM = "roles";
 
-    private static final Map<String, Date> revokedTokens = new HashMap<>();
-
     @Autowired
     private final JwtProperties jwtProperties;
 
@@ -90,7 +88,6 @@ public class JwtService {
 
     private Mono<JwtResponseDto> create(String accountId, List<String> roles) {
         return Mono.fromCallable(() -> {
-            revokeTokens(accountId);
             String newAccessToken = createToken(accountId, roles, jwtProperties.getAccessToken().expirationTime());
             String newRefreshToken = createToken(accountId, Collections.emptyList(), jwtProperties.getRefreshToken().expirationTime());
             return new JwtResponseDto(newAccessToken, TOKEN_TYPE, jwtProperties.getAccessToken().expirationTime(), newRefreshToken);
@@ -119,20 +116,16 @@ public class JwtService {
         JWTClaimsSet claims;
         try {
             if (!signedJwt.verify(jwsVerifier)) {
-                throw new InvalidJwtTokenException("Token signature is invalid: " + token);
+                return Mono.error(new InvalidJwtTokenException("Token signature is invalid: " + token));
             }
             claims = signedJwt.getJWTClaimsSet();
-        } catch (ParseException | IllegalStateException | JOSEException | InvalidJwtTokenException e) {
+        } catch (ParseException | IllegalStateException | JOSEException e) {
             log.error("Invalid token: {}", token, e);
             return Mono.error(new InvalidJwtTokenException("Unable to decode token: " + token, e));
         }
 
         if (claims.getExpirationTime().before(new Date())) {
             return Mono.error(new InvalidJwtTokenException("Token is expired"));
-        }
-
-        if (isRevoked(claims)) {
-            return Mono.error(new InvalidJwtTokenException("Token is revoked"));
         }
 
         return Mono.just(claims);
@@ -163,22 +156,6 @@ public class JwtService {
         }
 
         return jweObject.serialize();
-    }
-
-    private void revokeTokens(String accountId) {
-        Date issuedBefore = Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS));
-        Date revokedBeforeDate = revokedTokens.get(accountId);
-        if (revokedBeforeDate == null || revokedBeforeDate.before(issuedBefore)) {
-            revokedTokens.put(accountId, issuedBefore);
-            log.debug("Revoking tokens from user {} issued before {}", maskUsername(accountId), issuedBefore);
-        }
-    }
-
-    private boolean isRevoked(JWTClaimsSet claims) {
-        String accountId = claims.getSubject();
-        Date issuedAt = claims.getIssueTime();
-        Date revokedIssuedBefore = revokedTokens.get(accountId);
-        return revokedIssuedBefore != null && issuedAt.before(revokedIssuedBefore);
     }
 }
 
