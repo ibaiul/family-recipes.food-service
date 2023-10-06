@@ -31,7 +31,7 @@ public class AuthController {
     @PostMapping("/login")
     public Mono<ResponseEntity<JwtResponseDto>> login(@Valid @RequestBody AuthenticationRequestDto authenticationRequest) {
         return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.username(), authenticationRequest.password()))
-                .flatMap(auth -> jwtService.create(auth.getName(), auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()))
+                .flatMap(auth -> jwtService.create(auth.getName()))
                 .map(jwt -> {
                     HttpHeaders httpHeaders = new HttpHeaders();
                     httpHeaders.add(HttpHeaders.CACHE_CONTROL, CacheControl.noStore().getHeaderValue());

@@ -10,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
@@ -55,14 +56,12 @@ class JwtServiceTest {
     }
 
     @Test
-    void should_create_tokens_when_providing_username_and_roles() {
-        jwtService.create(user.getUsername(), user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+    void should_not_create_tokens_when_providing_non_existing_username() {
+        when(userDetailsService.findByUsername(user.getUsername())).thenReturn(Mono.empty());
+
+        jwtService.create(user.getUsername())
                 .as(StepVerifier::create)
-                .assertNext(tokens -> {
-                    assertThat(tokens.accessToken()).isNotEmpty();
-                    assertThat(tokens.refreshToken()).isNotEmpty();
-                })
-                .verifyComplete();
+                .verifyError(UsernameNotFoundException.class);
     }
 
     @Test

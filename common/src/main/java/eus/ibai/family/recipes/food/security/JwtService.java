@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -79,6 +80,7 @@ public class JwtService {
 
     public Mono<JwtResponseDto> create(String accountId) {
         return userDetailsService.findByUsername(accountId)
+                .switchIfEmpty(Mono.error(new UsernameNotFoundException("Cannot issue tokens for unknown user: " + accountId)))
                 .map(UserDetails::getAuthorities)
                 .flatMapMany(Flux::fromIterable)
                 .map(GrantedAuthority::getAuthority)
@@ -86,7 +88,7 @@ public class JwtService {
                 .flatMap(roles -> create(accountId, roles));
     }
 
-    public Mono<JwtResponseDto> create(String accountId, List<String> roles) {
+    private Mono<JwtResponseDto> create(String accountId, List<String> roles) {
         return Mono.fromCallable(() -> {
             revokeAccessTokens(accountId);
             String newAccessToken = createToken(accountId, roles, jwtProperties.getAccessToken().expirationTime());
