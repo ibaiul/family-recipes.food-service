@@ -39,7 +39,7 @@ public class JwtService {
 
     private static final String ROLE_CLAIM = "roles";
 
-    private static final Map<String, Date> revokedAccessTokens = new HashMap<>();
+    private static final Map<String, Date> revokedTokens = new HashMap<>();
 
     @Autowired
     private final JwtProperties jwtProperties;
@@ -90,7 +90,7 @@ public class JwtService {
 
     private Mono<JwtResponseDto> create(String accountId, List<String> roles) {
         return Mono.fromCallable(() -> {
-            revokeAccessTokens(accountId);
+            revokeTokens(accountId);
             String newAccessToken = createToken(accountId, roles, jwtProperties.getAccessToken().expirationTime());
             String newRefreshToken = createToken(accountId, Collections.emptyList(), jwtProperties.getRefreshToken().expirationTime());
             return new JwtResponseDto(newAccessToken, TOKEN_TYPE, jwtProperties.getAccessToken().expirationTime(), newRefreshToken);
@@ -165,19 +165,19 @@ public class JwtService {
         return jweObject.serialize();
     }
 
-    private void revokeAccessTokens(String accountId) {
+    private void revokeTokens(String accountId) {
         Date issuedBefore = Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS));
-        Date revokedBeforeDate = revokedAccessTokens.get(accountId);
+        Date revokedBeforeDate = revokedTokens.get(accountId);
         if (revokedBeforeDate == null || revokedBeforeDate.before(issuedBefore)) {
-            revokedAccessTokens.put(accountId, issuedBefore);
-            log.debug("Revoking access tokens from user {} issued before {}", maskUsername(accountId), issuedBefore);
+            revokedTokens.put(accountId, issuedBefore);
+            log.debug("Revoking tokens from user {} issued before {}", maskUsername(accountId), issuedBefore);
         }
     }
 
     private boolean isRevoked(JWTClaimsSet claims) {
         String accountId = claims.getSubject();
         Date issuedAt = claims.getIssueTime();
-        Date revokedIssuedBefore = revokedAccessTokens.get(accountId);
+        Date revokedIssuedBefore = revokedTokens.get(accountId);
         return revokedIssuedBefore != null && issuedAt.before(revokedIssuedBefore);
     }
 }
