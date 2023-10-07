@@ -19,6 +19,9 @@ spring:
     password: sa
     url: jdbc:h2:mem:integration-command-db;TRACE_LEVEL_FILE=4;DB_CLOSE_DELAY=-1
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+  cloud:
+    zookeeper:
+      enabled: false
 
 axon:
   serializer:
@@ -31,6 +34,8 @@ axon:
     processors:
       constraint-event-processor:
         mode: subscribing
+  distributed:
+    enabled: false
 
 jwt:
   access-token:
@@ -52,6 +57,15 @@ users:
     roles:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
+  - username: serviceId
+    password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
+    roles:
+      - FOOD_COMMAND_NODE
+
+services:
+  self:
+    id: serviceId
+    refresh-interval: 5
 
 newrelic:
   enabled: false

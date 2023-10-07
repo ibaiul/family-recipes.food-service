@@ -19,6 +19,8 @@ spring:
     user: sa
     password: sa
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+  application:
+    name: family-recipes.food-service.command
 
 axon:
   serializer:
@@ -31,6 +33,11 @@ axon:
     processors:
       constraint-event-processor:
         mode: subscribing
+  distributed:
+    enabled: true
+    spring-cloud:
+      rest-mode-url: /member-capabilities
+      #fallback-to-http-get: true
 
 jwt:
   access-token:
@@ -52,6 +59,16 @@ users:
     roles:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
+  - username: family-recipes.food-service.command
+    password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
+    roles:
+      - FOOD_COMMAND_NODE
+
+services:
+  self:
+    id: family-recipes.food-service.command
+    refresh-interval: 60
+
 
 newrelic:
   enabled: true

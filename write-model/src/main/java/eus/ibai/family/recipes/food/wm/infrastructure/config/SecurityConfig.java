@@ -2,12 +2,14 @@ package eus.ibai.family.recipes.food.wm.infrastructure.config;
 
 import eus.ibai.family.recipes.food.security.PathAuthorization;
 import eus.ibai.family.recipes.food.security.PathAuthorizations;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
 import static eus.ibai.family.recipes.food.security.Roles.FAMILY_MEMBER;
+import static eus.ibai.family.recipes.food.security.Roles.FOOD_COMMAND_NODE;
 import static org.springframework.http.HttpMethod.*;
 
 @Configuration
@@ -30,11 +32,17 @@ public class SecurityConfig {
                 new PathAuthorization(DELETE, INGREDIENTS_PATH_PATTERN, new String[]{FAMILY_MEMBER}),
                 new PathAuthorization(POST, PROPERTIES_PATH_PATTERN, new String[]{FAMILY_MEMBER}),
                 new PathAuthorization(PUT, PROPERTIES_PATH_PATTERN, new String[]{FAMILY_MEMBER}),
-                new PathAuthorization(DELETE, PROPERTIES_PATH_PATTERN, new String[]{FAMILY_MEMBER}),
-                new PathAuthorization(GET, "/member-capabilities"),
-                new PathAuthorization(POST, "/spring-command-bus-connector/command")
-//                new PathAuthorization(GET, "/member-capabilities", new String[]{FOOD_COMMAND_NODE}),
-//                new PathAuthorization(POST, "/spring-command-bus-connector/command", new String[]{FOOD_COMMAND_NODE})
+                new PathAuthorization(DELETE, PROPERTIES_PATH_PATTERN, new String[]{FAMILY_MEMBER})
+        );
+        return new PathAuthorizations(pathAuthorizations);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "axon.distributed.enabled", havingValue = "true")
+    PathAuthorizations distributedCommandBusPathAuthorizations() {
+        List<PathAuthorization> pathAuthorizations = List.of(
+                new PathAuthorization(GET, "/member-capabilities", new String[]{FOOD_COMMAND_NODE}),
+                new PathAuthorization(POST, "/spring-command-bus-connector/command", new String[]{FOOD_COMMAND_NODE})
         );
         return new PathAuthorizations(pathAuthorizations);
     }
