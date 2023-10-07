@@ -3,7 +3,6 @@ package eus.ibai.family.recipes.food.security;
 import eus.ibai.family.recipes.food.util.Temporary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -20,6 +19,9 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
 import java.util.List;
+
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -45,16 +47,16 @@ public class GlobalSecurityConfig {
     @Bean
     PathAuthorizations commonOpenPaths() {
         List<PathAuthorization> pathAuthorizationList = List.of(
-                new PathAuthorization(HttpMethod.GET, "/actuator/health"),
-                new PathAuthorization(HttpMethod.GET, "/actuator/health/readiness"),
-                new PathAuthorization(HttpMethod.GET, "/actuator/health/liveness"),
-                new PathAuthorization(HttpMethod.GET, "/actuator/info"),
-                new PathAuthorization(HttpMethod.POST, "/authentication/login"),
-                new PathAuthorization(HttpMethod.POST, "/authentication/refresh"),
-                new PathAuthorization(HttpMethod.GET, "/v3/api-docs/**"),
-                new PathAuthorization(HttpMethod.GET, "/v3/api-docs.yaml"),
-                new PathAuthorization(HttpMethod.GET, "/swagger-ui/**"),
-                new PathAuthorization(HttpMethod.GET, "/swagger-ui.html")
+                new PathAuthorization(GET, "/actuator/health"),
+                new PathAuthorization(GET, "/actuator/health/readiness"),
+                new PathAuthorization(GET, "/actuator/health/liveness"),
+                new PathAuthorization(GET, "/actuator/info"),
+                new PathAuthorization(POST, "/authentication/login"),
+                new PathAuthorization(POST, "/authentication/refresh"),
+                new PathAuthorization(GET, "/v3/api-docs/**"),
+                new PathAuthorization(GET, "/v3/api-docs.yaml"),
+                new PathAuthorization(GET, "/swagger-ui/**"),
+                new PathAuthorization(GET, "/swagger-ui.html")
         );
         return new PathAuthorizations(pathAuthorizationList);
     }

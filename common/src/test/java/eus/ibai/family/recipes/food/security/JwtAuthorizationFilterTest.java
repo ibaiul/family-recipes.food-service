@@ -8,7 +8,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -22,14 +21,15 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static org.springframework.http.HttpMethod.GET;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationFilterTest {
 
     private final List<PathAuthorization> publicPaths = List.of(
-            new PathAuthorization(HttpMethod.GET, "/public-endpoint-1"),
-            new PathAuthorization(HttpMethod.GET, "/public-endpoint-2"),
-            new PathAuthorization(HttpMethod.GET, "/public-endpoint-prefix/**")
+            new PathAuthorization(GET, "/public-endpoint-1"),
+            new PathAuthorization(GET, "/public-endpoint-2"),
+            new PathAuthorization(GET, "/public-endpoint-prefix/**")
     );
 
     @Mock
