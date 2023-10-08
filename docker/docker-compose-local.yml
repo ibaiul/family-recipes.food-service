@@ -18,13 +18,26 @@ services:
     networks:
       - family-recipes-net
 
-  write-model:
-    container_name: food-service-write-model
+  write-model1:
+    container_name: food-service-write-model1
     image: ibaiul/family-recipes:food-service-write-model-local
     pull_policy: always
     env_file: env.conf
     ports:
-      - "8080:8080"
+      - "8082:8080"
+    depends_on:
+      - db
+      - zk1
+    networks:
+      - family-recipes-net
+
+  write-model2:
+    container_name: food-service-write-model2
+    image: ibaiul/family-recipes:food-service-write-model-local
+    pull_policy: always
+    env_file: env.conf
+    ports:
+      - "8083:8080"
     depends_on:
       - db
       - zk1
@@ -40,7 +53,6 @@ services:
       - "8081:8081"
     depends_on:
       - db
-      - zk1
     networks:
       - family-recipes-net
 
