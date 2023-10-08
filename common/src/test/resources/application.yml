@@ -19,6 +19,11 @@ users:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
 
+services:
+  - serviceName: serviceName
+    roles:
+      - FOOD_COMMAND_NODE
+
 newrelic:
   enabled: false
   app:

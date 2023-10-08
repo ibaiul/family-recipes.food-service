@@ -10,9 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -56,6 +56,13 @@ public class AuthController {
         log.trace("Handling unauthorized exception: {}", t.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                .build();
+    }
+
+    @ExceptionHandler({LockedException.class})
+    public ResponseEntity<Void> handleAccountException(Throwable t) {
+        log.warn("Attempting to access forbidden account.", t);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .build();
     }
 }

@@ -24,7 +24,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
 
 @WebFluxTest(controllers = {AuthController.class, TestController.class})
-@Import({GlobalSecurityConfig.class, TestSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, TestSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
 class AuthControllerIT {
 
     @Autowired
@@ -146,5 +146,14 @@ class AuthControllerIT {
                 new AuthenticationRefreshRequestDto(""),
                 new AuthenticationRefreshRequestDto("  ")
         );
+    }
+
+    @Test
+    void should_not_allow_to_authenticate_service_accounts() {
+        webTestClient.post()
+                .uri("/authentication/login")
+                .bodyValue(new AuthenticationRequestDto("serviceName", "password"))
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }

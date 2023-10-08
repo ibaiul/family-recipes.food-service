@@ -20,7 +20,7 @@ spring:
     password: sa
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
   application:
-    name: family-recipes.food-service.command
+    name: &serviceName family-recipes.food-service.command
 
 axon:
   serializer:
@@ -65,10 +65,13 @@ users:
       - FOOD_COMMAND_NODE
 
 services:
-  self:
-    id: family-recipes.food-service.command
-    refresh-interval: 60
+  - serviceName: *serviceName
+    roles:
+      - FOOD_COMMAND_NODE
 
+identity:
+  service-id: *serviceName
+  refresh-interval: 60
 
 newrelic:
   enabled: true

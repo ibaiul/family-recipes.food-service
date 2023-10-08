@@ -14,7 +14,7 @@ import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
 
 @WebFluxTest(controllers = {TestController.class, AuthController.class})
-@Import({GlobalSecurityConfig.class, TestSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, TestSecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
 class RbacControllerIT {
     
     @Autowired

@@ -18,7 +18,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
@@ -91,14 +95,23 @@ public class GlobalSecurityConfig {
 
     @Bean
     @Temporary("Will be re-implemented in a dedicated microservice including RBAC")
-    public MapReactiveUserDetailsService users(UserProperties userProperties) {
-        List<UserDetails> inMemoryUsers = userProperties.getUsers().stream()
+    public MapReactiveUserDetailsService users(UserProperties userProperties, ServiceProperties serviceProperties, PasswordEncoder passwordEncoder) {
+        Stream<UserDetails> inMemoryUsers = userProperties.getUsers().stream()
                 .map(userDetails -> User.builder()
                         .username(userDetails.username())
                         .password(userDetails.password())
                         .roles(userDetails.roles().toArray(new String[0]))
-                        .build())
-                .toList();
-        return new MapReactiveUserDetailsService(inMemoryUsers);
+                        .build());
+        Stream<UserDetails> inMemoryServices = Optional.ofNullable(serviceProperties.getServices())
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(serviceDetails -> User.builder()
+                        .username(serviceDetails.serviceName())
+                        .password(UUID.randomUUID().toString())
+                        .passwordEncoder(passwordEncoder::encode)
+                        .roles(serviceDetails.roles().toArray(new String[0]))
+                        .accountLocked(true)
+                        .build());
+        return new MapReactiveUserDetailsService(Stream.concat(inMemoryUsers, inMemoryServices).toList());
     }
 }

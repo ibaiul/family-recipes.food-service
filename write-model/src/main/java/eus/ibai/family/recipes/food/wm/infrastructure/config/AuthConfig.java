@@ -17,7 +17,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class AuthConfig {
 
     @Bean
-    ServiceTokenProvider serviceTokenProvider(ServiceTokenAuthenticator serviceTokenAuthenticator, @Value("${services.self.refresh-interval}") long refreshInterval) {
+    ServiceTokenProvider serviceTokenProvider(ServiceTokenAuthenticator serviceTokenAuthenticator, @Value("${identity.refresh-interval}") long refreshInterval) {
         ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
         PeriodicallyRefreshedServiceTokenProvider serviceTokenProvider = new PeriodicallyRefreshedServiceTokenProvider(serviceTokenAuthenticator, scheduledThreadPoolExecutor, refreshInterval);
         serviceTokenProvider.init();
@@ -25,7 +25,7 @@ public class AuthConfig {
     }
 
     @Bean
-    ServiceTokenAuthenticator serviceTokenAuthenticator(@Value("${services.self.id}") String serviceId, JwtService jwtService) {
+    ServiceTokenAuthenticator serviceTokenAuthenticator(@Value("${identity.service-id}") String serviceId, JwtService jwtService) {
         return new LocalServiceTokenAuthenticator(serviceId, jwtService);
     }
 }
