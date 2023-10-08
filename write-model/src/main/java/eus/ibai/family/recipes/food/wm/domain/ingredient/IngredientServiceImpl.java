@@ -2,11 +2,13 @@ package eus.ibai.family.recipes.food.wm.domain.ingredient;
 
 import eus.ibai.family.recipes.food.exception.IngredientNotFoundException;
 import eus.ibai.family.recipes.food.wm.domain.command.AggregateCommand;
+import eus.ibai.family.recipes.food.wm.domain.command.RemoteHandlingExceptionMapper;
 import eus.ibai.family.recipes.food.wm.domain.property.CreatePropertyCommand;
 import eus.ibai.family.recipes.food.wm.infrastructure.exception.DownstreamConnectivityException;
 import lombok.AllArgsConstructor;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.extensions.reactor.commandhandling.gateway.ReactorCommandGateway;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -34,7 +36,9 @@ public class IngredientServiceImpl implements IngredientService {
                 .filter(exists -> exists)
                 .handle((ingredient, sink) -> sink.error(new IngredientAlreadyExistsException(ingredientName)))
                 .switchIfEmpty(Mono.defer(() -> Mono.just(new CreateIngredientCommand(generateId(), ingredientName))))
-                .flatMap(commandGateway::send);
+                .cast(AggregateCommand.class)
+                .flatMap(this::send)
+                .cast(String.class);
     }
 
     @Override
@@ -53,7 +57,8 @@ public class IngredientServiceImpl implements IngredientService {
                 .onErrorMap(t -> new DownstreamConnectivityException("Could not determine if ingredient bound to any recipe.", t))
                 .filter(isBound -> !isBound)
                 .switchIfEmpty(Mono.error(new IngredientAttachedToRecipeException(ingredientId)))
-                .flatMap(isNotBound -> Mono.defer(() -> send(new DeleteIngredientCommand(ingredientId))));
+                .flatMap(isNotBound -> Mono.defer(() -> send(new DeleteIngredientCommand(ingredientId))))
+                .then();
     }
 
     @Override
@@ -71,13 +76,13 @@ public class IngredientServiceImpl implements IngredientService {
 
     @Override
     public Mono<Void> removeIngredientProperty(String ingredientId, String propertyId) {
-        return send(new RemoveIngredientPropertyCommand(ingredientId, propertyId));
+        return send(new RemoveIngredientPropertyCommand(ingredientId, propertyId)).then();
     }
 
-    private Mono<Void> send(AggregateCommand<String> command) {
+    private Mono<Object> send(AggregateCommand<String> command) {
         return commandGateway.send(command)
                 .onErrorMap(AggregateNotFoundException.class, t -> new IngredientNotFoundException(command.aggregateId()))
                 .onErrorMap(AggregateDeletedException.class, t -> new IngredientNotFoundException("Ingredient is deleted: " + command.aggregateId()))
-                .then();
+                .onErrorMap(t -> t.getCause() instanceof RemoteHandlingException, new RemoteHandlingExceptionMapper());
     }
 }

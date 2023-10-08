@@ -2,11 +2,13 @@ package eus.ibai.family.recipes.food.wm.domain.recipe;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
 import eus.ibai.family.recipes.food.wm.domain.command.AggregateCommand;
+import eus.ibai.family.recipes.food.wm.domain.command.RemoteHandlingExceptionMapper;
 import eus.ibai.family.recipes.food.wm.domain.ingredient.CreateIngredientCommand;
 import eus.ibai.family.recipes.food.wm.infrastructure.exception.DownstreamConnectivityException;
 import lombok.AllArgsConstructor;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.extensions.reactor.commandhandling.gateway.ReactorCommandGateway;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -35,7 +37,9 @@ public class RecipeServiceImpl implements RecipeService {
                 .filter(exists -> exists)
                 .handle((recipe, sink) -> sink.error(new RecipeAlreadyExistsException(recipeName)))
                 .switchIfEmpty(Mono.defer(() -> Mono.just(new CreateRecipeCommand(generateId(), recipeName))))
-                .flatMap(commandGateway::send);
+                .cast(AggregateCommand.class)
+                .flatMap(this::send)
+                .cast(String.class);
     }
 
     @Override
@@ -50,7 +54,7 @@ public class RecipeServiceImpl implements RecipeService {
 
     @Override
     public Mono<Void> deleteRecipe(String recipeId) {
-        return send(new DeleteRecipeCommand(recipeId));
+        return send(new DeleteRecipeCommand(recipeId)).then();
     }
 
     @Override
@@ -68,23 +72,23 @@ public class RecipeServiceImpl implements RecipeService {
 
     @Override
     public Mono<Void> removeRecipeIngredient(String recipeId, String ingredientId) {
-        return send(new RemoveRecipeIngredientCommand(recipeId, ingredientId));
+        return send(new RemoveRecipeIngredientCommand(recipeId, ingredientId)).then();
     }
 
     @Override
     public Mono<Void> addRecipeTag(String recipeId, String tag) {
-        return send(new AddRecipeTagCommand(recipeId, tag));
+        return send(new AddRecipeTagCommand(recipeId, tag)).then();
     }
 
     @Override
     public Mono<Void> removeRecipeTag(String recipeId, String tag) {
-        return send(new RemoveRecipeTagCommand(recipeId, tag));
+        return send(new RemoveRecipeTagCommand(recipeId, tag)).then();
     }
 
-    private Mono<Void> send(AggregateCommand<String> command) {
+    private Mono<Object> send(AggregateCommand<String> command) {
         return commandGateway.send(command)
                 .onErrorMap(AggregateNotFoundException.class, t -> new RecipeNotFoundException(command.aggregateId()))
                 .onErrorMap(AggregateDeletedException.class, t -> new RecipeNotFoundException("Recipe is deleted: " + command.aggregateId()))
-                .then();
+                .onErrorMap(t -> t.getCause() instanceof RemoteHandlingException, new RemoteHandlingExceptionMapper());
     }
 }
