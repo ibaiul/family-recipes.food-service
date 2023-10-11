@@ -9,14 +9,18 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
 
     public ZookeeperContainer(@NonNull String dockerImageName) {
         super(dockerImageName);
-        addExposedPort(ZOOKEEPER_PORT);
+        addFixedExposedPort(2181, ZOOKEEPER_PORT);
     }
 
     @Override
     protected void configure() {
-        addEnv("ALLOW_ANONYMOUS_LOGIN", "yes");
         addEnv("ZOO_SERVER_ID", "1");
         addEnv("ZOO_SERVERS", "0.0.0.0:2888:3888");
+        addEnv("ZOO_CLIENT_USER", "zoo");
+        addEnv("ZOO_CLIENT_PASSWORD", "keeper");
+        addEnv("ZOO_SERVER_USERS", "zoo");
+        addEnv("ZOO_SERVER_PASSWORDS", "keeper");
+        addEnv("ZOO_ENABLE_AUTH", "yes");
     }
 
     public int getMappedHttpPort() {

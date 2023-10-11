@@ -4,6 +4,11 @@ spring:
   cloud:
     zookeeper:
       enabled: true
+      session-timeout: 6000000
+      user: zoo
+      pass: keeper
+      client:
+        secure: true
 
 axon:
   distributed:

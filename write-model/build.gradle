@@ -7,6 +7,10 @@ dependencies {
     }
 
     implementation 'org.springframework.cloud:spring-cloud-starter-zookeeper-discovery:4.0.1'
+//    implementation 'org.apache.curator:curator-framework:5.5.0'
+//    implementation 'org.apache.curator:curator-client:5.5.0'
+//    implementation 'org.apache.curator:curator-recipes:5.5.0'
+//    implementation 'org.apache.curator:curator-x-discovery:5.5.0'
     implementation 'org.axonframework.extensions.springcloud:axon-springcloud-spring-boot-autoconfigure:4.8.0'
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     implementation ("org.axonframework:axon-spring-boot-starter:$axonVersion") {

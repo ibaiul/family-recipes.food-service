@@ -6,6 +6,7 @@ spring:
   cloud:
     zookeeper:
       connect-string: zk1:2181
+      # TODO Set up TLS + auth
 
 axon:
   distributed:
