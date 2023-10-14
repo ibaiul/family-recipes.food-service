@@ -5,8 +5,7 @@ spring:
     url: jdbc:postgresql://db:5432/local-command-db
   cloud:
     zookeeper:
-      connect-string: zk1:2181
-      # TODO Set up TLS + auth
+      enabled: true
 
 axon:
   distributed:

@@ -30,6 +30,10 @@ services:
       - zk1
     networks:
       - family-recipes-net
+    volumes:
+      - ./zookeeper/client.properties:/app/zk-client.properties:ro
+      - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
+      - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
 
   write-model2:
     container_name: food-service-write-model2
@@ -43,6 +47,10 @@ services:
       - zk1
     networks:
       - family-recipes-net
+    volumes:
+      - ./zookeeper/client.properties:/app/zk-client.properties:ro
+      - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
+      - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
 
   read-model:
     container_name: food-service-read-model
@@ -85,11 +93,19 @@ services:
 #      - ALLOW_ANONYMOUS_LOGIN=yes
       - ZOO_SERVER_ID=1
       - ZOO_SERVERS=0.0.0.0:2888:3888
-      - ZOO_CLIENT_USER=zoo
-      - ZOO_CLIENT_PASSWORD=keeper
       - ZOO_ENABLE_AUTH=yes
+      - ZOO_LOG_LEVEL=ALL
+      - ZOO_TLS_CLIENT_ENABLE=true
+      - ZOO_TLS_CLIENT_AUTH=need
+      - ZOO_TLS_CLIENT_KEYSTORE_FILE=/bitnami/zookeeper/certs/keystore.jks
+      - ZOO_TLS_CLIENT_KEYSTORE_PASSWORD=123456
+      - ZOO_TLS_CLIENT_TRUSTSTORE_FILE=/bitnami/zookeeper/certs/truststore.jks
+      - ZOO_TLS_CLIENT_TRUSTSTORE_PASSWORD=123456
     networks:
       - family-recipes-net
+    volumes:
+      - ./zookeeper/server-keystore.jks:/bitnami/zookeeper/certs/keystore.jks:ro
+      - ./zookeeper/server-truststore.jks:/bitnami/zookeeper/certs/truststore.jks:ro
 
   zoonavigator:
     container_name: zoonavigator

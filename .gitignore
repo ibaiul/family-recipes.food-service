@@ -5,3 +5,8 @@ build/
 *.hprof
 *.tgz
 **/out
+*.jks
+*.key
+*.crt
+*.csr
+*.srl

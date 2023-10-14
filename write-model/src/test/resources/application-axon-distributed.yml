@@ -4,6 +4,7 @@ spring:
   cloud:
     zookeeper:
       enabled: true
+      client-config: /home/ibai/git/utils/docker-compose/zookeeper/client.properties
       session-timeout: 6000000
       user: zoo
       pass: keeper

@@ -21,6 +21,13 @@ spring:
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
   application:
     name: &serviceName family-recipes.food-service.command
+  cloud:
+    zookeeper:
+      enabled: false
+      connect-string: zk1:3181
+      client-config: /app/zk-client.properties
+      user: zoo
+      pass: keeper
 
 axon:
   serializer:
