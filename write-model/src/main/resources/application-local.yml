@@ -6,13 +6,14 @@ spring:
   cloud:
     zookeeper:
       enabled: true
+      connect-string: zk1:3181
+      client-config: /app/client.properties
 
 axon:
   distributed:
     enabled: true
     spring-cloud:
       rest-mode-url: /member-capabilities
-      #fallback-to-http-get: true
 
 newrelic:
   enabled: false

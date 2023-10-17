@@ -31,7 +31,7 @@ services:
     networks:
       - family-recipes-net
     volumes:
-      - ./zookeeper/client.properties:/app/zk-client.properties:ro
+      - ./zookeeper/client.properties:/app/client.properties:ro
       - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
       - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
 
@@ -48,7 +48,7 @@ services:
     networks:
       - family-recipes-net
     volumes:
-      - ./zookeeper/client.properties:/app/zk-client.properties:ro
+      - ./zookeeper/client.properties:/app/client.properties:ro
       - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
       - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
 

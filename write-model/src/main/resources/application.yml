@@ -24,8 +24,6 @@ spring:
   cloud:
     zookeeper:
       enabled: false
-      connect-string: zk1:3181
-      client-config: /app/zk-client.properties
 
 axon:
   serializer:

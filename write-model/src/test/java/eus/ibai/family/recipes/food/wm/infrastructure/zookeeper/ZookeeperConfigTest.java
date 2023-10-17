@@ -28,9 +28,10 @@ class ZookeeperConfigTest {
         File clientProperties = Files.createTempFile("client", ".properties").toFile();
         clientProperties.deleteOnExit();
         ZookeeperUtils.createClientProperties(clientProperties, keystoreFile, truststoreFile);
+        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
         CuratorFrameworkCustomizer curatorFrameworkCustomizer = zookeeperConfig.customizeZookeeperClient(clientProperties.getAbsolutePath());
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> curatorFrameworkCustomizer.customize(CuratorFrameworkFactory.builder()));
-        assertThat(exception.getMessage()).isEqualTo("Could not determine x509 Principal ID.");
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> curatorFrameworkCustomizer.customize(builder));
+        assertThat(exception.getCause().getMessage()).isEqualTo("Could not determine x509 Principal ID.");
     }
 }

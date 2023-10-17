@@ -6,7 +6,6 @@ import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -41,7 +40,7 @@ public class ZookeeperConfig {
                 String keystoreFile = zkClientConfig.getProperty("zookeeper.ssl.keyStore.location");
                 String keystorePass = zkClientConfig.getProperty("zookeeper.ssl.keyStore.password");
                 principalId = getPrincipalId(keystoreFile, keystorePass);
-            } catch (QuorumPeerConfig.ConfigException | GeneralSecurityException | IOException e) {
+            } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
             builder
@@ -65,7 +64,7 @@ public class ZookeeperConfig {
     }
 
     private String getPrincipalId(String keystoreFile, String keystorePass) throws GeneralSecurityException, IOException {
-        KeyStore one = KeyStore.getInstance("JKS"); // optionally add ,provider
+        KeyStore one = KeyStore.getInstance("JKS");
         try (InputStream is = new FileInputStream(keystoreFile)) {
             one.load(is, keystorePass.toCharArray());
             List<String> aliases = new ArrayList<>();

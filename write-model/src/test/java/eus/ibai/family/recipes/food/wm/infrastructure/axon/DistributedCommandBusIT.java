@@ -59,12 +59,12 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class DistributedCommandBusIT {
 
-//    private static final ZookeeperContainer<?> zookeeperContainer = new ZookeeperContainer<>("bitnami/zookeeper")
-//            .withReuse(true);
-//
-//    static {
-//        zookeeperContainer.start();
-//    }
+    private static final ZookeeperContainer<?> zookeeperContainer = new ZookeeperContainer<>("bitnami/zookeeper")
+            .withReuse(true);
+
+    static {
+        zookeeperContainer.start();
+    }
 
     @RegisterExtension
     private static final WireMockExtension wiremock = WireMockExtension.newInstance()
@@ -182,13 +182,11 @@ class DistributedCommandBusIT {
     }
 
     @DynamicPropertySource
-    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
-//        registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:" + zookeeperContainer.getMappedHttpPort());
-//        registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:2181");
-        registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:3181");
+    private static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+        registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:" + zookeeperContainer.getHttpPort());
     }
 
-    public static void stubReplicaMemberCapabilitiesResponse() {
+    private static void stubReplicaMemberCapabilitiesResponse() {
         stubFor(get(urlEqualTo("/member-capabilities"))
                 .withHeader(HttpHeaders.AUTHORIZATION, matching("Bearer .+"))
                 .willReturn(aResponse()
@@ -203,7 +201,7 @@ class DistributedCommandBusIT {
                                 """)));
     }
 
-    public static void stubReplicaRouteCommandResponse() {
+    private static void stubReplicaRouteCommandResponse() {
         stubFor(post(urlEqualTo("/spring-command-bus-connector/command"))
                 .withHeader(HttpHeaders.AUTHORIZATION, matching("Bearer .+"))
                 .withRequestBody(matchingJsonPath("$.commandIdentifier", matching("[a-z0-9-]{36}")))
