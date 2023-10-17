@@ -6,6 +6,9 @@ cd docker/zookeeper
 
 pass="123456"
 
+echo "Cleaning old keystores ..."
+rm -f  server-keystore.jks server-truststore.jks client-keystore.jks client-truststore.jks
+
 echo "Generating server keystore ..."
 keytool -genkey -alias server -keyalg RSA -keystore server-keystore.jks -keysize 4096 -dname "C=XX, ST=Bizkaia, L=Bilbo, O=O, OU=OU, CN=server" -storepass "${pass}"
 echo "Generating self signed root CA cert ..."
@@ -33,4 +36,4 @@ keytool -keystore client-keystore.jks -alias client -import -file client.key -st
 echo "Generating client truststore ..."
 keytool -keystore client-truststore.jks -alias client -import -file ca.crt -storepass "${pass}" -noprompt
 
-# trap 'rm -f ca.srl server.csr' EXIT
+trap 'rm -f ca.crt ca.key ca.srl ca.csr server.csr server.key client.csr client.key' EXIT
