@@ -21,3 +21,18 @@ Service in charge of managing and querying food entities, part of the Family Rec
 - Meal service
   - Record meals eaten by family members
   - Display meals eaten, stats, reminders
+
+### Running locally
+
+```bash
+# Build read model
+./gradlew clean food-service-read-model:bootJar
+docker build -t ibaiul/family-recipes:food-service-read-model-local --build-arg MODULE_NAME=read-model -f Dockerfile .
+# Build write model
+./gradlew clean food-service-write-model:bootJar
+docker build -t ibaiul/family-recipes:food-service-write-model-local --build-arg MODULE_NAME=write-model -f Dockerfile .
+# Generate certificates for Zookeeper server and clients
+./generate-certs.sh
+# Run services
+docker-compose -f docker/docker-compose-local.yml up -d
+```
