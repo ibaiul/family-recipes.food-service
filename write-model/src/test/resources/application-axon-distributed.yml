@@ -10,7 +10,6 @@ axon:
     enabled: true
     spring-cloud:
       rest-mode-url: /member-capabilities
-      #fallback-to-http-get: true
 
 services:
   - serviceName: *serviceName

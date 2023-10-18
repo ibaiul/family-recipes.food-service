@@ -6,7 +6,3 @@ build/
 *.tgz
 **/out
 *.jks
-*.key
-*.crt
-*.csr
-*.srl

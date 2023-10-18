@@ -23,9 +23,8 @@ class IngredientNameConstraintRepositoryIT {
         String ingredientId = generateId();
         IngredientNameConstraintEntity expectedEntity = new IngredientNameConstraintEntity(ingredientId, "ingredientName");
 
-        int insertedAmount = repository.insert(expectedEntity.getIngredientId(), expectedEntity.getIngredientName());
+        repository.save(new IngredientNameConstraintEntity(expectedEntity.getIngredientId(), expectedEntity.getIngredientName()));
 
-        assertThat(insertedAmount).isEqualTo(1);
         Optional<IngredientNameConstraintEntity> actualEntity = repository.findById(ingredientId);
         Assertions.assertThat(actualEntity).contains(expectedEntity);
     }

@@ -24,7 +24,7 @@ public class LocalServiceTokenAuthenticator implements ServiceTokenAuthenticator
 
     public Mono<JwtResponseDto> refreshServiceInstanceCredentials(String refreshToken) {
         return jwtService.refresh(refreshToken)
-                .doOnNext(jwtResponseDto -> log.debug("Refreshed service instance credentials."))
+                .doOnNext(jwtResponseDto -> log.trace("Refreshed service instance credentials."))
                 .doOnError(t -> log.error("Failed to refresh service instance credentials.", t));
     }
 }

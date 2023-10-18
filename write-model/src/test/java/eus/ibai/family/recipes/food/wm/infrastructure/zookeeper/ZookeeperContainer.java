@@ -9,14 +9,23 @@ import java.io.File;
 public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends GenericContainer<SELF> {
 
     private static final int ZOOKEEPER_PORT = 2181;
+
     private static final int ZOOKEEPER_SSL_PORT = 3181;
+
+    public static final String KEYSTORE_CONTAINER_PATH = "/bitnami/zookeeper/certs/server-keystore.jks";
+
+    public static final String TRUSTSTORE_CONTAINER_PATH = "/bitnami/zookeeper/certs/server-truststore.jks";
 
     private boolean ssl = false;
 
     private File keystore;
+
     private String keystorePass;
+
     private File truststore;
+
     private String truststorePass;
+
     private boolean auth = false;
 
     public ZookeeperContainer(@NonNull String dockerImageName) {
@@ -44,12 +53,12 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
         addEnv("ZOO_SERVERS", "0.0.0.0:2888:3888");
         if (ssl) {
             addExposedPort(ZOOKEEPER_SSL_PORT);
-            addFileSystemBind(keystore.getAbsolutePath(), "/bitnami/zookeeper/certs/server-keystore.jks", BindMode.READ_WRITE);
-            addFileSystemBind(truststore.getAbsolutePath(), "/bitnami/zookeeper/certs/server-truststore.jks", BindMode.READ_WRITE);
+            addFileSystemBind(keystore.getAbsolutePath(), KEYSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
+            addFileSystemBind(truststore.getAbsolutePath(), TRUSTSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
             addEnv("ZOO_TLS_CLIENT_ENABLE", "true");
-            addEnv("ZOO_TLS_CLIENT_KEYSTORE_FILE", "/bitnami/zookeeper/certs/server-keystore.jks");
+            addEnv("ZOO_TLS_CLIENT_KEYSTORE_FILE", KEYSTORE_CONTAINER_PATH);
             addEnv("ZOO_TLS_CLIENT_KEYSTORE_PASSWORD", keystorePass);
-            addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_FILE", "/bitnami/zookeeper/certs/server-truststore.jks");
+            addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_FILE", TRUSTSTORE_CONTAINER_PATH);
             addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_PASSWORD", truststorePass);
         }
         if (auth) {

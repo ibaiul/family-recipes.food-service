@@ -64,13 +64,13 @@ public class ZookeeperConfig {
     }
 
     private String getPrincipalId(String keystoreFile, String keystorePass) throws GeneralSecurityException, IOException {
-        KeyStore one = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance("JKS");
         try (InputStream is = new FileInputStream(keystoreFile)) {
-            one.load(is, keystorePass.toCharArray());
+            keyStore.load(is, keystorePass.toCharArray());
             List<String> aliases = new ArrayList<>();
-            one.aliases().asIterator().forEachRemaining(aliases::add);
+            keyStore.aliases().asIterator().forEachRemaining(aliases::add);
             for (String alias : aliases) {
-                Certificate cert = one.getCertificate(alias);
+                Certificate cert = keyStore.getCertificate(alias);
                 if (cert instanceof X509Certificate x509Certificate && (!isCACert(x509Certificate))) {
                     return x509Certificate.getSubjectX500Principal().getName();
                 }

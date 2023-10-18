@@ -84,13 +84,17 @@ public class AxonConfig {
                                                   Registration registration,
                                                   RestCapabilityDiscoveryMode restCapabilityDiscoveryMode,
                                                   JacksonSerializer jacksonSerializer) {
+        AnnotationRoutingStrategy routingStrategy = AnnotationRoutingStrategy.builder()
+                .annotationType(RoutingKey.class)
+                .build();
+        AcceptAllCommandsDiscoveryMode capabilityDiscoveryMode = AcceptAllCommandsDiscoveryMode.builder()
+                .delegate(restCapabilityDiscoveryMode)
+                .build();
         return SpringCloudCommandRouter.builder()
                 .discoveryClient(discoveryClient)
                 .localServiceInstance(registration)
-                .routingStrategy(AnnotationRoutingStrategy.builder().annotationType(RoutingKey.class).build())
-                .capabilityDiscoveryMode(AcceptAllCommandsDiscoveryMode.builder()
-                        .delegate(restCapabilityDiscoveryMode)
-                        .build())
+                .routingStrategy(routingStrategy)
+                .capabilityDiscoveryMode(capabilityDiscoveryMode)
                 .serializer(jacksonSerializer)
                 .build();
     }
@@ -126,7 +130,7 @@ public class AxonConfig {
     public RestTemplate restTemplateWithTokenSupplier(ServiceTokenProvider serviceTokenProvider) {
         return new RestTemplateBuilder()
                 .requestCustomizers(clientHttpRequest -> {
-                    log.debug("Injecting service token");
+                    log.trace("Injecting service token");
                     String serviceToken = serviceTokenProvider.getServiceToken()
                             .orElseThrow(() -> new IllegalStateException("Could not retrieve a service token."));
                     clientHttpRequest.getHeaders().setBearerAuth(serviceToken);

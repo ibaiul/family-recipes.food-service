@@ -40,7 +40,6 @@ axon:
     enabled: true
     spring-cloud:
       rest-mode-url: /member-capabilities
-      #fallback-to-http-get: true
 
 jwt:
   access-token:
@@ -62,10 +61,6 @@ users:
     roles:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
-  - username: family-recipes.food-service.command
-    password: $2a$10$/MevmKqa0SH9eMidXyFJAO7hEo/ZM0yNDrCzb7cZ2f5PS4uvUhojK
-    roles:
-      - FOOD_COMMAND_NODE
 
 services:
   - serviceName: *serviceName

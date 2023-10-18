@@ -93,17 +93,7 @@ class DistributedCommandBusIT {
     @BeforeEach
     void beforeEach() {
         stubReplicaMemberCapabilitiesResponse();
-        ZookeeperInstance mockZookeeperInstance = new ZookeeperInstance("serviceName", "serviceName", Map.of("instance_status", "UP"));
-        UriSpec uriSpec = new UriSpec();
-        uriSpec.add(new UriSpec.Part("scheme", true));
-        uriSpec.add(new UriSpec.Part("://", false));
-        uriSpec.add(new UriSpec.Part("address", true));
-        uriSpec.add(new UriSpec.Part(":", false));
-        uriSpec.add(new UriSpec.Part("port", true));
-        ServiceInstance<ZookeeperInstance> mockServiceInstance = new ServiceInstance<>("serviceName", "000000000000-0000-0000-0000-00000000",
-                "localhost", wiremock.getPort(), null, mockZookeeperInstance, Instant.now().toEpochMilli(), ServiceType.DYNAMIC,
-                uriSpec, true);
-        ZookeeperServiceInstance mockZookeeperServiceInstance = new ZookeeperServiceInstance("serviceName", mockServiceInstance);
+        ZookeeperServiceInstance mockZookeeperServiceInstance = mockZookeeperServiceInstance();
         when(discoveryClient.getServices()).thenReturn(List.of("serviceName"));
         when(discoveryClient.getInstances("serviceName")).thenReturn(List.of(mockZookeeperServiceInstance));
     }
@@ -249,5 +239,19 @@ class DistributedCommandBusIT {
                                 }
                                 """.formatted(springHttpReplyMessage.getCommandIdentifier(), new String(Base64.getEncoder().encode(springHttpReplyMessage.getSerializedException()))))
                 ));
+    }
+
+    private static ZookeeperServiceInstance mockZookeeperServiceInstance() {
+        ZookeeperInstance mockZookeeperInstance = new ZookeeperInstance("serviceName", "serviceName", Map.of("instance_status", "UP"));
+        UriSpec uriSpec = new UriSpec();
+        uriSpec.add(new UriSpec.Part("scheme", true));
+        uriSpec.add(new UriSpec.Part("://", false));
+        uriSpec.add(new UriSpec.Part("address", true));
+        uriSpec.add(new UriSpec.Part(":", false));
+        uriSpec.add(new UriSpec.Part("port", true));
+        ServiceInstance<ZookeeperInstance> mockServiceInstance = new ServiceInstance<>("serviceName", "000000000000-0000-0000-0000-00000000",
+                "localhost", wiremock.getPort(), null, mockZookeeperInstance, Instant.now().toEpochMilli(), ServiceType.DYNAMIC,
+                uriSpec, true);
+        return new ZookeeperServiceInstance("serviceName", mockServiceInstance);
     }
 }

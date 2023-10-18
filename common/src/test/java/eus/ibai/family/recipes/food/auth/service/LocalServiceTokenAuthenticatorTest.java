@@ -1,5 +1,6 @@
 package eus.ibai.family.recipes.food.auth.service;
 
+import eus.ibai.family.recipes.food.security.InvalidJwtTokenException;
 import eus.ibai.family.recipes.food.security.JwtResponseDto;
 import eus.ibai.family.recipes.food.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,7 @@ class LocalServiceTokenAuthenticatorTest {
     @Test
     void should_propagate_error_when_refreshing_credentials_fails() {
         String refreshToken = "refreshToken";
-        WebClientRequestException expectedError = new WebClientRequestException(new Throwable("Error message"), POST, mock(URI.class), new HttpHeaders());
+        WebClientRequestException expectedError = new WebClientRequestException(new InvalidJwtTokenException("Error message"), POST, mock(URI.class), new HttpHeaders());
         when(jwtService.refresh(refreshToken)).thenReturn(Mono.error(expectedError));
 
         serviceTokenAuthenticator.refreshServiceInstanceCredentials(refreshToken)

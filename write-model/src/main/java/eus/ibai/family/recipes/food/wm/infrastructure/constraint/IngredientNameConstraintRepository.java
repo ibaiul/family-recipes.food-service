@@ -9,10 +9,6 @@ import java.util.Optional;
 
 public interface IngredientNameConstraintRepository extends JpaRepository<IngredientNameConstraintEntity, String> {
 
-    @Modifying
-    @Query(value = "INSERT INTO ingredient_name_constraint VALUES (:ingredientId, :ingredientName)", nativeQuery = true)
-    int insert(@Param("ingredientId") String ingredientId, @Param("ingredientName") String ingredientName);
-
     @Query(value = "SELECT CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS BIT) FROM ingredient_name_constraint WHERE ingredient_name = :ingredientName", nativeQuery = true)
     boolean nameExists(@Param("ingredientName") String ingredientName);
 

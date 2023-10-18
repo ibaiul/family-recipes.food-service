@@ -14,14 +14,14 @@ import java.util.regex.Pattern;
 @Slf4j
 public class RemoteHandlingExceptionMapper implements UnaryOperator<Throwable> {
 
-    private static final Pattern REMOTE_EXCEPTION_PATTERN = Pattern.compile("(An exception was thrown by the remote message handling component: )([a-zA-Z\\.]+)(: )(.*)(\nCaused by .*)?");
+    private static final Pattern REMOTE_EXCEPTION_MESSAGE_PATTERN = Pattern.compile("(An exception was thrown by the remote message handling component: )([a-zA-Z\\.]+)(: )(.*)(\nCaused by .*)?");
 
     @Override
     public Throwable apply(Throwable throwable) {
         if (!(throwable instanceof CommandExecutionException) || !(throwable.getCause() instanceof RemoteHandlingException remoteHandlingException)) {
             return throwable;
         }
-        Matcher matcher = REMOTE_EXCEPTION_PATTERN.matcher(remoteHandlingException.getMessage());
+        Matcher matcher = REMOTE_EXCEPTION_MESSAGE_PATTERN.matcher(remoteHandlingException.getMessage());
         if (matcher.find()) {
             String originalExceptionClassName = matcher.group(2);
             String originalExceptionMessage = matcher.group(4);

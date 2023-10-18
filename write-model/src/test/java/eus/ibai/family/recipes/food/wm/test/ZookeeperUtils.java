@@ -110,7 +110,7 @@ public class ZookeeperUtils {
         }
     }
 
-    public static X500Name createX500Name(String cn) {
+    private static X500Name createX500Name(String cn) {
         return new X500NameBuilder(RFC4519Style.INSTANCE)
                 .addRDN(RFC4519Style.c, new DERUTF8String("XX"))
                 .addRDN(RFC4519Style.st, new DERUTF8String("Bizkaia"))

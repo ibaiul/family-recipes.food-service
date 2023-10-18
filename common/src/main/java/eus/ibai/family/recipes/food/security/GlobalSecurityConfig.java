@@ -112,6 +112,7 @@ public class GlobalSecurityConfig {
                         .roles(serviceDetails.roles().toArray(new String[0]))
                         .accountLocked(true)
                         .build());
-        return new MapReactiveUserDetailsService(Stream.concat(inMemoryUsers, inMemoryServices).toList());
+        List<UserDetails> inMemoryAccounts = Stream.concat(inMemoryUsers, inMemoryServices).toList();
+        return new MapReactiveUserDetailsService(inMemoryAccounts);
     }
 }

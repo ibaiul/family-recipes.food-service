@@ -9,6 +9,9 @@ import org.apache.zookeeper.data.Id;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -67,6 +70,12 @@ class ZookeeperConfigIT {
     @Autowired
     private CuratorFramework curatorFramework;
 
+    @Autowired
+    private DiscoveryClient discoveryClient;
+
+    @LocalServerPort
+    private int randomServerPort;
+
     @Test
     void should_connect_to_ssl_port() throws Exception {
         assertThat(curatorFramework.getZookeeperClient().isConnected()).isTrue();
@@ -84,6 +93,15 @@ class ZookeeperConfigIT {
         ZooKeeper zooKeeper = curatorFramework.getZookeeperClient().getZooKeeper();
         List<ACL> acls = zooKeeper.getACL("/services/serviceName", null);
         assertThat(acls).containsExactlyInAnyOrder(new ACL(ZooDefs.Perms.ALL, new Id("x509", "CN=client,OU=OU,O=O,L=Bilbo,ST=Bizkaia,C=XX")));
+    }
+
+    @Test
+    void should_register_service_instance() {
+        List<String> registeredServices = discoveryClient.getServices();
+        assertThat(registeredServices).containsExactlyInAnyOrder("serviceName");
+        List<ServiceInstance> registeredInstances = discoveryClient.getInstances(registeredServices.get(0));
+        assertThat(registeredInstances).hasSize(1);
+        assertThat(registeredInstances.get(0).getPort()).isEqualTo(randomServerPort);
     }
 
     @DynamicPropertySource
