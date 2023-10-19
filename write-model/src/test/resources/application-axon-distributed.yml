@@ -19,3 +19,9 @@ services:
 identity:
   service-id: *serviceName
   refresh-interval: 5
+
+management:
+  health:
+    service-registry:
+      enabled: true
+      interval: 60

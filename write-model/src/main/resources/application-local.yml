@@ -20,6 +20,12 @@ newrelic:
   metrics:
     ingest-uri: http://wiremock:8080/metric/v1
 
+management:
+  health:
+    service-registry:
+      enabled: true
+      interval: 60
+
 springdoc:
   api-docs:
     enabled: true

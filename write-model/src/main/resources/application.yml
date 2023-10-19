@@ -22,6 +22,16 @@ spring:
   application:
     name: &serviceName family-recipes.food-service.command
   cloud:
+    discovery:
+      blocking:
+        enabled: true
+      reactive:
+        enabled: false # SpringCloudCommandRouter does not support the reactive client
+      client:
+        health-indicator:
+          enabled: false
+        composite-indicator:
+          enabled: false
     zookeeper:
       enabled: false
 
@@ -37,7 +47,7 @@ axon:
       constraint-event-processor:
         mode: subscribing
   distributed:
-    enabled: true
+    enabled: false
     spring-cloud:
       rest-mode-url: /member-capabilities
 
@@ -99,6 +109,11 @@ management:
     diskSpace:
       enabled: false
     ping:
+      enabled: false
+    service-registry:
+      enabled: false
+      interval: 60
+    zookeeper:
       enabled: false
   endpoint:
     info:
