@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class RemoteHandlingExceptionMapper implements UnaryOperator<Throwable> {
 
-    private static final Pattern REMOTE_EXCEPTION_MESSAGE_PATTERN = Pattern.compile("(An exception was thrown by the remote message handling component: )([a-zA-Z\\.]+)(: )(.*)(\nCaused by .*)?");
+    private static final Pattern REMOTE_EXCEPTION_MESSAGE_PATTERN = Pattern.compile("(An exception was thrown by the remote message handling component: )([a-zA-Z\\.$]+)(: )(.*)(\nCaused by .*)?");
 
     @Override
     public Throwable apply(Throwable throwable) {
