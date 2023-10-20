@@ -145,10 +145,10 @@ management:
     exclude:
       - executor
       - hikaricp
+      - jdbc
       - jvm
       - logback
       - process
-      - r2dbc
       - spring
   observations:
     exclude:

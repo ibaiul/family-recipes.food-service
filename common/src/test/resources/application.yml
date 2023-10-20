@@ -72,6 +72,7 @@ management:
     exclude:
       - executor
       - hikaricp
+      - jdbc
       - jvm
       - logback
       - process
