@@ -105,7 +105,7 @@ class ZookeeperConfigIT {
     }
 
     @DynamicPropertySource
-    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+    public static void setDynamicProperties(final DynamicPropertyRegistry registry) {
         registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:" + zookeeperContainer.getHttpsPort());
         registry.add("spring.cloud.zookeeper.client-config", clientProperties::getAbsolutePath);
     }

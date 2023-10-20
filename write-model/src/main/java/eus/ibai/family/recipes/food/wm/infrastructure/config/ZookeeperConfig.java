@@ -1,7 +1,5 @@
 package eus.ibai.family.recipes.food.wm.infrastructure.config;
 
-import eus.ibai.family.recipes.food.health.ComponentHealthIndicator;
-import eus.ibai.family.recipes.food.health.HealthCache;
 import org.apache.curator.framework.api.ACLProvider;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
@@ -63,12 +61,6 @@ public class ZookeeperConfig {
                         }
                     });
         };
-    }
-
-    @Bean("service-registry")
-    @ConditionalOnProperty(prefix = "management.health.service-registry", name = "enabled", havingValue = "true")
-    public ComponentHealthIndicator serviceRegistryHealthIndicator(HealthCache healthCache) {
-        return new ComponentHealthIndicator("serviceRegistry", healthCache);
     }
 
     private String getPrincipalId(String keystoreFile, String keystorePass) throws GeneralSecurityException, IOException {

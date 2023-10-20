@@ -42,7 +42,7 @@ public abstract class AcceptanceTest {
     }
 
     @DynamicPropertySource
-    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+    public static void setDynamicProperties(final DynamicPropertyRegistry registry) {
         log.debug("Setting dynamic properties.");
         registry.add("spring.datasource.url", postgreSqlContainer::getJdbcUrl);
         registry.add("spring.datasource.driverClassName", () -> "org.postgresql.Driver");

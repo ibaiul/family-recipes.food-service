@@ -172,7 +172,7 @@ class DistributedCommandBusIT {
     }
 
     @DynamicPropertySource
-    private static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+    private static void setDynamicProperties(final DynamicPropertyRegistry registry) {
         registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:" + zookeeperContainer.getHttpPort());
     }
 
