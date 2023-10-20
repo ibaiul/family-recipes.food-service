@@ -82,6 +82,9 @@ management:
   health:
     probes:
       enabled: true
+    command-bus:
+      enabled: true
+      interval: 60
     database:
       enabled: false
       interval: 60

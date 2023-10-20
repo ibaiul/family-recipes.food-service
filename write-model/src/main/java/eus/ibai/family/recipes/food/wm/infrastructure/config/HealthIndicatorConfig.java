@@ -14,4 +14,10 @@ public class HealthIndicatorConfig {
     public ComponentHealthIndicator serviceRegistryHealthIndicator(HealthCache healthCache) {
         return new ComponentHealthIndicator("service-registry", healthCache);
     }
+
+    @Bean("command-bus")
+    @ConditionalOnProperty(prefix = "management.health.command-bus", name = "enabled", havingValue = "true")
+    public ComponentHealthIndicator commandBusHealthIndicator(HealthCache healthCache) {
+        return new ComponentHealthIndicator("command-bus", healthCache);
+    }
 }

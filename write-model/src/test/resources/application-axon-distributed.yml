@@ -25,3 +25,6 @@ management:
     service-registry:
       enabled: true
       interval: 60
+    command-bus:
+      enabled: true
+      interval: 2
