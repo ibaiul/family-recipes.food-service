@@ -19,6 +19,8 @@ spring:
     password: sa
     url: jdbc:h2:mem:integration-command-db;TRACE_LEVEL_FILE=4;DB_CLOSE_DELAY=-1
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+  application:
+    name: serviceName
   cloud:
     discovery:
       blocking:
