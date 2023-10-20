@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.zookeeper.discovery.ZookeeperDiscoveryClient;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -76,8 +78,11 @@ class ZookeeperConfigIT {
     @LocalServerPort
     private int randomServerPort;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Test
-    void should_connect_to_ssl_port() throws Exception {
+    void should_connect_to_ssl_port() {
         assertThat(curatorFramework.getZookeeperClient().isConnected()).isTrue();
     }
 
@@ -102,6 +107,13 @@ class ZookeeperConfigIT {
         List<ServiceInstance> registeredInstances = discoveryClient.getInstances(registeredServices.get(0));
         assertThat(registeredInstances).hasSize(1);
         assertThat(registeredInstances.get(0).getPort()).isEqualTo(randomServerPort);
+    }
+
+    @Test
+    void should_only_load_zookeeper_discovery_client() {
+        List<DiscoveryClient> discoveryClients = applicationContext.getBeansOfType(DiscoveryClient.class).values().stream().toList();
+        assertThat(discoveryClients).hasSize(1);
+        assertThat(discoveryClients.get(0)).isExactlyInstanceOf(ZookeeperDiscoveryClient.class);
     }
 
     @DynamicPropertySource

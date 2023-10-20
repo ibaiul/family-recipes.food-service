@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.loadbalancer.support.SimpleObjectProvider;
 import reactor.test.StepVerifier;
 
 import java.util.Collections;
@@ -31,12 +33,14 @@ class CommandBusHealthContributorTest {
 
     @BeforeEach
     void beforeEach() {
-        healthContributor = new CommandBusHealthContributor(discoveryClient, SERVICE_NAME, 60);
+        ObjectProvider<DiscoveryClient> discoveryClientProvider = new SimpleObjectProvider<>(discoveryClient);
+        healthContributor = new CommandBusHealthContributor(discoveryClientProvider, SERVICE_NAME, 60);
     }
 
     @Test
     void should_return_healthy_when_running_in_local_mode() {
-        healthContributor = new CommandBusHealthContributor(null, SERVICE_NAME, 60);
+        ObjectProvider<DiscoveryClient> discoveryClientProvider = new SimpleObjectProvider<>(null);
+        healthContributor = new CommandBusHealthContributor(discoveryClientProvider, SERVICE_NAME, 60);
         Health expectedHealth = Health.up().withDetail("mode", "local").build();
 
         StepVerifier.create(healthContributor.doHealthCheck())

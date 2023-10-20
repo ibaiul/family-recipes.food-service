@@ -23,6 +23,7 @@ spring:
     name: &serviceName family-recipes.food-service.command
   cloud:
     discovery:
+      enabled: &springCloudEnabled false
       blocking:
         enabled: true
       reactive:
@@ -33,7 +34,11 @@ spring:
         composite-indicator:
           enabled: false
     zookeeper:
-      enabled: false
+      enabled: *springCloudEnabled
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.client.discovery.composite.CompositeDiscoveryClientAutoConfiguration
+      - org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
 
 axon:
   serializer:
@@ -47,7 +52,7 @@ axon:
       constraint-event-processor:
         mode: subscribing
   distributed:
-    enabled: false
+    enabled: *springCloudEnabled
     spring-cloud:
       rest-mode-url: /member-capabilities
 
@@ -114,7 +119,7 @@ management:
     ping:
       enabled: false
     service-registry:
-      enabled: false
+      enabled: *springCloudEnabled
       interval: 60
     zookeeper:
       enabled: false

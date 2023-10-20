@@ -2,6 +2,7 @@ package eus.ibai.family.recipes.food.wm.infrastructure.health;
 
 import eus.ibai.family.recipes.food.health.AbstractComponentHealthContributor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,10 +26,10 @@ public class CommandBusHealthContributor extends AbstractComponentHealthContribu
 
     private final String serviceName;
 
-    public CommandBusHealthContributor(DiscoveryClient discoveryClient, @Value("${spring.application.name}") String serviceName,
+    public CommandBusHealthContributor(ObjectProvider<DiscoveryClient> discoveryClientProvider, @Value("${spring.application.name}") String serviceName,
                                        @Value("${management.health.command-bus.interval:300}") long interval) {
         super("command-bus", interval);
-        this.discoveryClient = discoveryClient;
+        this.discoveryClient = discoveryClientProvider.getIfAvailable();
         this.serviceName = serviceName;
     }
 

@@ -4,14 +4,16 @@ spring:
   flyway:
     url: jdbc:postgresql://db:5432/local-command-db
   cloud:
+    discovery:
+      enabled: &springCloudEnabled true
     zookeeper:
-      enabled: true
+      enabled: *springCloudEnabled
       connect-string: zk1:3181
       client-config: /app/client.properties
 
 axon:
   distributed:
-    enabled: true
+    enabled: *springCloudEnabled
     spring-cloud:
       rest-mode-url: /member-capabilities
 
@@ -23,7 +25,7 @@ newrelic:
 management:
   health:
     service-registry:
-      enabled: true
+      enabled: *springCloudEnabled
       interval: 60
 
 springdoc:
