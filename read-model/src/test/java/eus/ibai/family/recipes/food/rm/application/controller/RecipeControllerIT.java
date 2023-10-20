@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {RecipeController.class, AuthController.class})
-@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
 class RecipeControllerIT {
 
     @MockBean

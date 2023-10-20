@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,12 +23,12 @@ import reactor.util.function.Tuples;
 
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.HS512;
-import static eus.ibai.family.recipes.food.util.Utils.maskUsername;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -37,8 +38,6 @@ public class JwtService {
     private static final String TOKEN_TYPE = "Bearer";
 
     private static final String ROLE_CLAIM = "roles";
-
-    private static final Map<String, Date> revokedAccessTokens = new HashMap<>();
 
     @Autowired
     private final JwtProperties jwtProperties;
@@ -79,6 +78,7 @@ public class JwtService {
 
     public Mono<JwtResponseDto> create(String accountId) {
         return userDetailsService.findByUsername(accountId)
+                .switchIfEmpty(Mono.error(new UsernameNotFoundException("Cannot issue tokens for unknown user: " + accountId)))
                 .map(UserDetails::getAuthorities)
                 .flatMapMany(Flux::fromIterable)
                 .map(GrantedAuthority::getAuthority)
@@ -86,9 +86,8 @@ public class JwtService {
                 .flatMap(roles -> create(accountId, roles));
     }
 
-    public Mono<JwtResponseDto> create(String accountId, List<String> roles) {
+    private Mono<JwtResponseDto> create(String accountId, List<String> roles) {
         return Mono.fromCallable(() -> {
-            revokeAccessTokens(accountId);
             String newAccessToken = createToken(accountId, roles, jwtProperties.getAccessToken().expirationTime());
             String newRefreshToken = createToken(accountId, Collections.emptyList(), jwtProperties.getRefreshToken().expirationTime());
             return new JwtResponseDto(newAccessToken, TOKEN_TYPE, jwtProperties.getAccessToken().expirationTime(), newRefreshToken);
@@ -117,20 +116,16 @@ public class JwtService {
         JWTClaimsSet claims;
         try {
             if (!signedJwt.verify(jwsVerifier)) {
-                throw new InvalidJwtTokenException("Token signature is invalid: " + token);
+                return Mono.error(new InvalidJwtTokenException("Token signature is invalid: " + token));
             }
             claims = signedJwt.getJWTClaimsSet();
-        } catch (ParseException | IllegalStateException | JOSEException | InvalidJwtTokenException e) {
+        } catch (ParseException | IllegalStateException | JOSEException e) {
             log.error("Invalid token: {}", token, e);
             return Mono.error(new InvalidJwtTokenException("Unable to decode token: " + token, e));
         }
 
         if (claims.getExpirationTime().before(new Date())) {
             return Mono.error(new InvalidJwtTokenException("Token is expired"));
-        }
-
-        if (isRevoked(claims)) {
-            return Mono.error(new InvalidJwtTokenException("Token is revoked"));
         }
 
         return Mono.just(claims);
@@ -161,22 +156,6 @@ public class JwtService {
         }
 
         return jweObject.serialize();
-    }
-
-    private void revokeAccessTokens(String accountId) {
-        Date issuedBefore = Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS));
-        Date revokedBeforeDate = revokedAccessTokens.get(accountId);
-        if (revokedBeforeDate == null || revokedBeforeDate.before(issuedBefore)) {
-            revokedAccessTokens.put(accountId, issuedBefore);
-            log.debug("Revoking access tokens from user {} issued before {}", maskUsername(accountId), issuedBefore);
-        }
-    }
-
-    private boolean isRevoked(JWTClaimsSet claims) {
-        String accountId = claims.getSubject();
-        Date issuedAt = claims.getIssueTime();
-        Date revokedIssuedBefore = revokedAccessTokens.get(accountId);
-        return revokedIssuedBefore != null && issuedAt.before(revokedIssuedBefore);
     }
 }
 

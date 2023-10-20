@@ -7,10 +7,12 @@ dependencies {
     }
 
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    implementation "org.springframework.cloud:spring-cloud-starter-zookeeper-discovery:$springCloudZookeeperVersion"
     implementation ("org.axonframework:axon-spring-boot-starter:$axonVersion") {
         exclude group:"org.axonframework", module:"axon-server-connector"
     }
     implementation "org.axonframework.extensions.reactor:axon-reactor-spring-boot-starter:$axonVersion"
+    implementation "org.axonframework.extensions.springcloud:axon-springcloud-spring-boot-autoconfigure:$axonSpringCloudVersion"
     runtimeOnly "org.postgresql:postgresql:$postgresqlVersion"
     implementation "org.flywaydb:flyway-core:$flywayVersion"
 

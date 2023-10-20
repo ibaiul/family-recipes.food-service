@@ -19,6 +19,11 @@ users:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
 
+services:
+  - serviceName: serviceName
+    roles:
+      - FOOD_COMMAND_NODE
+
 newrelic:
   enabled: false
   app:
@@ -67,6 +72,7 @@ management:
     exclude:
       - executor
       - hikaricp
+      - jdbc
       - jvm
       - logback
       - process

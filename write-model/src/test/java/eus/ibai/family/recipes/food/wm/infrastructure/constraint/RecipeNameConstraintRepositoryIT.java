@@ -20,10 +20,9 @@ class RecipeNameConstraintRepositoryIT {
     void should_insert_recipe_name_constraint_when_providing_id() {
         RecipeNameConstraintEntity expectedEntity = new RecipeNameConstraintEntity("recipeId", "recipeName");
 
-        int insertedAmount = repository.insert(expectedEntity.getRecipeId(), expectedEntity.getRecipeName());
+        repository.save(new RecipeNameConstraintEntity(expectedEntity.getRecipeId(), expectedEntity.getRecipeName()));
 
-        assertThat(insertedAmount).isEqualTo(1);
-        Optional<RecipeNameConstraintEntity> actualEntity = repository.findById("recipeId");
+        Optional<RecipeNameConstraintEntity> actualEntity = repository.findById(expectedEntity.getRecipeId());
         assertThat(actualEntity).contains(expectedEntity);
     }
 

@@ -13,6 +13,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 @SpringBootTest(webEnvironment = NONE)
 class GlobalSecurityConfigIT {
@@ -23,17 +25,17 @@ class GlobalSecurityConfigIT {
     @Test
     void should_allow_list_public_endpoints() {
         List<Tuple2<HttpMethod, String>> expectedAllowedPublicPaths = List.of(
-                Tuples.of(HttpMethod.GET, "/test/public/**"),
-                Tuples.of(HttpMethod.GET, "/actuator/health"),
-                Tuples.of(HttpMethod.GET, "/actuator/health/readiness"),
-                Tuples.of(HttpMethod.GET, "/actuator/health/liveness"),
-                Tuples.of(HttpMethod.GET, "/actuator/info"),
-                Tuples.of(HttpMethod.POST, "/authentication/login"),
-                Tuples.of(HttpMethod.POST, "/authentication/refresh"),
-                Tuples.of(HttpMethod.GET, "/v3/api-docs/**"),
-                Tuples.of(HttpMethod.GET, "/v3/api-docs.yaml"),
-                Tuples.of(HttpMethod.GET, "/swagger-ui/**"),
-                Tuples.of(HttpMethod.GET, "/swagger-ui.html")
+                Tuples.of(GET, "/test/public/**"),
+                Tuples.of(GET, "/actuator/health"),
+                Tuples.of(GET, "/actuator/health/readiness"),
+                Tuples.of(GET, "/actuator/health/liveness"),
+                Tuples.of(GET, "/actuator/info"),
+                Tuples.of(POST, "/authentication/login"),
+                Tuples.of(POST, "/authentication/refresh"),
+                Tuples.of(GET, "/v3/api-docs/**"),
+                Tuples.of(GET, "/v3/api-docs.yaml"),
+                Tuples.of(GET, "/swagger-ui/**"),
+                Tuples.of(GET, "/swagger-ui.html")
         );
 
         securityWebFilterChain.getWebFilters()

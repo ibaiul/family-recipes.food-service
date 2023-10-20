@@ -70,7 +70,7 @@ public abstract class AcceptanceTest {
     }
 
     @DynamicPropertySource
-    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+    public static void setDynamicProperties(final DynamicPropertyRegistry registry) {
         log.debug("Setting dynamic properties.");
         String defaultDatabaseName = postgreSqlContainer.getDatabaseName();
         registry.add("spring.datasource.url", () -> postgreSqlContainer.getJdbcUrl().replace(defaultDatabaseName, "acceptance-command-db"));

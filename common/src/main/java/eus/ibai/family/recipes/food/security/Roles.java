@@ -6,5 +6,7 @@ public class Roles {
 
     public static final String FAMILY_ADMIN = "FAMILY_ADMIN";
 
+    public static final String FOOD_COMMAND_NODE = "FOOD_COMMAND_NODE";
+
     private Roles() {}
 }

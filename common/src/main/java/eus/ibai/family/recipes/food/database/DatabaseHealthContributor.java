@@ -1,6 +1,6 @@
 package eus.ibai.family.recipes.food.database;
 
-import eus.ibai.family.recipes.food.health.ComponentHealthContributor;
+import eus.ibai.family.recipes.food.health.AbstractComponentHealthContributor;
 import io.r2dbc.spi.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,22 +13,13 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "management.health.database", name = "enabled", havingValue = "true")
-public class DatabaseHealthContributor implements ComponentHealthContributor {
-
-    private static final String COMPONENT_NAME = "database";
+public class DatabaseHealthContributor extends AbstractComponentHealthContributor {
 
     private final ConnectionFactoryHealthIndicator decoratedIndicator;
 
-    private final long interval;
-
     public DatabaseHealthContributor(ConnectionFactory connectionFactory, @Value("${management.health.database.interval:300}") long interval) {
+        super("database", interval);
         this.decoratedIndicator = new ConnectionFactoryHealthIndicator(connectionFactory);
-        this.interval = interval;
-    }
-
-    @Override
-    public String getComponentName() {
-        return COMPONENT_NAME;
     }
 
     @Override
@@ -36,10 +27,5 @@ public class DatabaseHealthContributor implements ComponentHealthContributor {
         return decoratedIndicator.health()
                 .map(health -> Health.status(health.getStatus()).build())
                 .doOnNext(health -> log.trace("Received database health response: {}", health.getStatus()));
-    }
-
-    @Override
-    public long getInterval() {
-        return interval;
     }
 }

@@ -2,10 +2,12 @@ package eus.ibai.family.recipes.food.wm.domain.property;
 
 import eus.ibai.family.recipes.food.exception.PropertyNotFoundException;
 import eus.ibai.family.recipes.food.wm.domain.command.AggregateCommand;
+import eus.ibai.family.recipes.food.wm.domain.command.RemoteHandlingExceptionMapper;
 import eus.ibai.family.recipes.food.wm.infrastructure.exception.DownstreamConnectivityException;
 import lombok.AllArgsConstructor;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.extensions.reactor.commandhandling.gateway.ReactorCommandGateway;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -31,7 +33,9 @@ public class PropertyServiceImpl implements PropertyService {
                 .filter(exists -> exists)
                 .handle((property, sink) -> sink.error(new PropertyAlreadyExistsException(propertyName)))
                 .switchIfEmpty(Mono.defer( () -> Mono.just(new CreatePropertyCommand(generateId(), propertyName))))
-                .flatMap(commandGateway::send);
+                .cast(AggregateCommand.class)
+                .flatMap(this::send)
+                .cast(String.class);
     }
 
     @Override
@@ -50,13 +54,14 @@ public class PropertyServiceImpl implements PropertyService {
                 .onErrorMap(t -> new DownstreamConnectivityException("Could not determine if property bound to any ingredient.", t))
                 .filter(isBound -> !isBound)
                 .switchIfEmpty(Mono.error(new PropertyAttachedToIngredientException("Property:" + propertyId)))
-                .flatMap(isNotBound -> Mono.defer(() -> send(new DeletePropertyCommand(propertyId))));
+                .flatMap(isNotBound -> Mono.defer(() -> send(new DeletePropertyCommand(propertyId))))
+                .then();
     }
 
-    private Mono<Void> send(AggregateCommand<String> command) {
+    private Mono<Object> send(AggregateCommand<String> command) {
         return commandGateway.send(command)
                 .onErrorMap(AggregateNotFoundException.class, t -> new PropertyNotFoundException(command.aggregateId()))
                 .onErrorMap(AggregateDeletedException.class, t -> new PropertyNotFoundException("Property is deleted: " + command.aggregateId()))
-                .then();
+                .onErrorMap(t -> t.getCause() instanceof RemoteHandlingException, new RemoteHandlingExceptionMapper());
     }
 }

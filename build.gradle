@@ -40,14 +40,15 @@ subprojects {
         implementation "com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion"
         implementation "org.springdoc:springdoc-openapi-starter-webflux-ui:$springDocVersion"
 
-
         // Version fixes for transient dependencies with vulnerabilities
+        // SNYK-JAVA-IONETTY-5953332 -> Waiting for spring-boot-starter-webflux +3.1.4
+        implementation 'io.projectreactor.netty:reactor-netty-http:1.1.12'
+        // SNYK-JAVA-ORGBOUNCYCASTLE-5771340 -> Waiting for spring-cloud-starter-zookeeper-discovery +4.0.1
+        implementation 'org.bouncycastle:bcprov-jdk18on:1.74'
         // SNYK-JAVA-ORGYAML-3152153
         implementation "org.yaml:snakeyaml:2.0"
-        // SNYK-JAVA-COMSQUAREUPOKIO-5773320 -> Waiting for okhttp +4.11.0 to include okio +3.4.0
-        implementation "com.squareup.okio:okio:$okioVersion"
-        // SNYK-JAVA-COMSQUAREUPOKIO-5820002 -> Waiting for okhttp +4.11.0 to include okio-jvm +3.4.0
-        implementation "com.squareup.okio:okio-jvm:$okioVersion"
+        // SNYK-JAVA-COMSQUAREUPOKIO-5773320, SNYK-JAVA-COMSQUAREUPOKIO-5820002 -> Waiting for telemetry-http-okhttp +0.15 to include okhttp +4.11.0
+        implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
         testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         testCompileOnly "org.projectlombok:lombok:${lombokVersion}"

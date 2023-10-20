@@ -19,6 +19,26 @@ spring:
     user: sa
     password: sa
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+  application:
+    name: &serviceName family-recipes.food-service.command
+  cloud:
+    discovery:
+      enabled: &springCloudEnabled false
+      blocking:
+        enabled: true
+      reactive:
+        enabled: false # SpringCloudCommandRouter does not support the reactive client
+      client:
+        health-indicator:
+          enabled: false
+        composite-indicator:
+          enabled: false
+    zookeeper:
+      enabled: *springCloudEnabled
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.client.discovery.composite.CompositeDiscoveryClientAutoConfiguration
+      - org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
 
 axon:
   serializer:
@@ -31,6 +51,10 @@ axon:
     processors:
       constraint-event-processor:
         mode: subscribing
+  distributed:
+    enabled: *springCloudEnabled
+    spring-cloud:
+      rest-mode-url: /member-capabilities
 
 jwt:
   access-token:
@@ -53,6 +77,15 @@ users:
       - FAMILY_MEMBER
       - FAMILY_ADMIN
 
+services:
+  - serviceName: *serviceName
+    roles:
+      - FOOD_COMMAND_NODE
+
+identity:
+  service-id: *serviceName
+  refresh-interval: 60
+
 newrelic:
   enabled: true
   app:
@@ -67,6 +100,9 @@ management:
   health:
     probes:
       enabled: true
+    command-bus:
+      enabled: true
+      interval: 60
     database:
       enabled: false
       interval: 60
@@ -81,6 +117,13 @@ management:
     diskSpace:
       enabled: false
     ping:
+      enabled: false
+    service-registry:
+      enabled: *springCloudEnabled
+      interval: 60
+    zookeeper:
+      enabled: false
+    refresh:
       enabled: false
   endpoint:
     info:
@@ -102,10 +145,10 @@ management:
     exclude:
       - executor
       - hikaricp
+      - jdbc
       - jvm
       - logback
       - process
-      - r2dbc
       - spring
   observations:
     exclude:

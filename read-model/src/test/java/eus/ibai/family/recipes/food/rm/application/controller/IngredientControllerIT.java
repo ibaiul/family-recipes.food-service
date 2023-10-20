@@ -32,7 +32,7 @@ import static eus.ibai.family.recipes.food.util.Utils.generateId;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {IngredientController.class, AuthController.class})
-@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
 class IngredientControllerIT {
 
     @MockBean

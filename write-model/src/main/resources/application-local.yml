@@ -3,11 +3,30 @@ spring:
     url: jdbc:postgresql://db:5432/local-command-db
   flyway:
     url: jdbc:postgresql://db:5432/local-command-db
+  cloud:
+    discovery:
+      enabled: &springCloudEnabled true
+    zookeeper:
+      enabled: *springCloudEnabled
+      connect-string: zk1:3181
+      client-config: /app/client.properties
+
+axon:
+  distributed:
+    enabled: *springCloudEnabled
+    spring-cloud:
+      rest-mode-url: /member-capabilities
 
 newrelic:
   enabled: false
   metrics:
     ingest-uri: http://wiremock:8080/metric/v1
+
+management:
+  health:
+    service-registry:
+      enabled: *springCloudEnabled
+      interval: 60
 
 springdoc:
   api-docs:

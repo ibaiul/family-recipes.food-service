@@ -17,3 +17,4 @@ Global invariants are enforced using "Set Based Consistency Validation".
   - Sagas
   - Snapshots
   - Event versioning (Event Upcasting)
+  - CachingRepository

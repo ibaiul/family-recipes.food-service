@@ -23,9 +23,8 @@ class PropertyNameConstraintRepositoryIT {
         String propertyId = generateId();
         PropertyNameConstraintEntity expectedEntity = new PropertyNameConstraintEntity(propertyId, "propertyName");
 
-        int insertedAmount = repository.insert(expectedEntity.getPropertyId(), expectedEntity.getPropertyName());
+        repository.save(new PropertyNameConstraintEntity(expectedEntity.getPropertyId(), expectedEntity.getPropertyName()));
 
-        assertThat(insertedAmount).isEqualTo(1);
         Optional<PropertyNameConstraintEntity> actualEntity = repository.findById(propertyId);
         Assertions.assertThat(actualEntity).contains(expectedEntity);
     }

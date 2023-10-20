@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: &serviceName serviceName
+  cloud:
+    discovery:
+      enabled: &springCloudEnabled true
+    zookeeper:
+      enabled: *springCloudEnabled
+
+axon:
+  distributed:
+    enabled: *springCloudEnabled
+    spring-cloud:
+      rest-mode-url: /member-capabilities
+
+services:
+  - serviceName: *serviceName
+    roles:
+      - FOOD_COMMAND_NODE
+
+identity:
+  service-id: *serviceName
+  refresh-interval: 5
+
+management:
+  health:
+    service-registry:
+      enabled: *springCloudEnabled
+      interval: 60
+    command-bus:
+      enabled: true
+      interval: 2

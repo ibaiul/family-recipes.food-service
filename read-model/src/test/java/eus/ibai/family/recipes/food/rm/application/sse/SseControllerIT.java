@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
 
 @WebFluxTest(controllers = {SseController.class, AuthController.class})
-@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
 class SseControllerIT {
 
     @MockBean
@@ -49,7 +49,7 @@ class SseControllerIT {
     }
 
     @Test
-    void should_receive_published_domain_events_when_subscribing_to_sse_publisher() throws JsonProcessingException {
+    void should_receive_published_domain_events_when_subscribing_to_sse_publisher() {
         RecipeCreatedEvent recipeCreatedEvent = new RecipeCreatedEvent(generateId(), "Pil-pil cod");
         IngredientCreatedEvent ingredientCreatedEvent = new IngredientCreatedEvent(generateId(), "Cod");
         ServerSentEvent<DomainEvent<String>> expectedSseEvent1 = ServerSentEvent.<DomainEvent<String>>builder()

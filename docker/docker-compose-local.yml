@@ -5,7 +5,7 @@ services:
   db:
     container_name: family-recipes-db
     image: postgres:13.8
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_MULTIPLE_DATABASES="local-command-db","local-query-db"
       - POSTGRES_USER=sa
@@ -18,18 +18,39 @@ services:
     networks:
       - family-recipes-net
 
-  write-model:
-    container_name: food-service-write-model
+  write-model1:
+    container_name: food-service-write-model1
     image: ibaiul/family-recipes:food-service-write-model-local
     pull_policy: always
     env_file: env.conf
     ports:
-      - "8080:8080"
+      - "8082:8080"
     depends_on:
       - db
-      - wiremock
+      - zk1
     networks:
       - family-recipes-net
+    volumes:
+      - ./zookeeper/client.properties:/app/client.properties:ro
+      - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
+      - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
+
+  write-model2:
+    container_name: food-service-write-model2
+    image: ibaiul/family-recipes:food-service-write-model-local
+    pull_policy: always
+    env_file: env.conf
+    ports:
+      - "8083:8080"
+    depends_on:
+      - db
+      - zk1
+    networks:
+      - family-recipes-net
+    volumes:
+      - ./zookeeper/client.properties:/app/client.properties:ro
+      - ./zookeeper/client-keystore.jks:/app/client-keystore.jks:ro
+      - ./zookeeper/client-truststore.jks:/app/client-truststore.jks:ro
 
   read-model:
     container_name: food-service-read-model
@@ -40,14 +61,13 @@ services:
       - "8081:8081"
     depends_on:
       - db
-      - wiremock
     networks:
       - family-recipes-net
 
   db-ui:
     container_name: family-recipes-db-ui
     image: dpage/pgadmin4
-    restart: always
+    restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: password
@@ -62,17 +82,39 @@ services:
     networks:
       - family-recipes-net
 
-  wiremock:
-    container_name: food-service-wiremock
-    image: wiremock/wiremock:2.35.0
+  zk1:
+    container_name: zk1
+    hostname: zk1
+    image: bitnami/zookeeper
+    restart: unless-stopped
     ports:
-      - "18080:8080"
-    command: "--global-response-templating --verbose"
-    volumes:
-      - ./wiremock:/home/wiremock
+      - "21811:2181"
+      - "31811:3181"
+    environment:
+      - ZOO_SERVER_ID=1
+      - ZOO_SERVERS=0.0.0.0:2888:3888
+      - ZOO_LOG_LEVEL=ALL
+      - ZOO_ENABLE_AUTH=yes
+      - ZOO_TLS_CLIENT_ENABLE=true
+      - ZOO_TLS_CLIENT_AUTH=need
+      - ZOO_TLS_CLIENT_KEYSTORE_FILE=/bitnami/zookeeper/certs/keystore.jks
+      - ZOO_TLS_CLIENT_KEYSTORE_PASSWORD=123456
+      - ZOO_TLS_CLIENT_TRUSTSTORE_FILE=/bitnami/zookeeper/certs/truststore.jks
+      - ZOO_TLS_CLIENT_TRUSTSTORE_PASSWORD=123456
     networks:
       - family-recipes-net
+    volumes:
+      - ./zookeeper/server-keystore.jks:/bitnami/zookeeper/certs/keystore.jks:ro
+      - ./zookeeper/server-truststore.jks:/bitnami/zookeeper/certs/truststore.jks:ro
 
+  zoonavigator:
+    container_name: zoonavigator
+    image: elkozmon/zoonavigator
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    networks:
+      - family-recipes-net
 
 volumes:
   postgres_data:

@@ -19,6 +19,26 @@ spring:
     password: sa
     url: jdbc:h2:mem:integration-command-db;TRACE_LEVEL_FILE=4;DB_CLOSE_DELAY=-1
     locations: classpath:db/migration/common,classpath:db/migration/{vendor}
+  application:
+    name: serviceName
+  cloud:
+    discovery:
+      enabled: &springCloudEnabled false
+      blocking:
+        enabled: true
+      reactive:
+        enabled: false
+      client:
+        health-indicator:
+          enabled: false
+        composite-indicator:
+          enabled: false
+    zookeeper:
+      enabled: *springCloudEnabled
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.client.discovery.composite.CompositeDiscoveryClientAutoConfiguration
+      - org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
 
 axon:
   serializer:
@@ -31,6 +51,8 @@ axon:
     processors:
       constraint-event-processor:
         mode: subscribing
+  distributed:
+    enabled: *springCloudEnabled
 
 jwt:
   access-token:
@@ -67,6 +89,9 @@ management:
   health:
     probes:
       enabled: true
+    command-bus:
+      enabled: true
+      interval: 60
     database:
       enabled: false
       interval: 60
@@ -81,6 +106,13 @@ management:
     diskSpace:
       enabled: false
     ping:
+      enabled: false
+    service-registry:
+      enabled: *springCloudEnabled
+      interval: 60
+    zookeeper:
+      enabled: false
+    refresh:
       enabled: false
   endpoint:
     info:
@@ -102,10 +134,10 @@ management:
     exclude:
       - executor
       - hikaricp
+      - jdbc
       - jvm
       - logback
       - process
-      - r2dbc
       - spring
   observations:
     exclude:
