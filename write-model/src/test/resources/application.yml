@@ -102,6 +102,8 @@ management:
       interval: 60
     zookeeper:
       enabled: false
+    refresh:
+      enabled: false
   endpoint:
     info:
       enabled: true

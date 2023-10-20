@@ -38,6 +38,7 @@ class ServiceRegistryHealthIT {
                         .jsonPath("$.status").isEqualTo("UP")
                         .jsonPath("$.components.service-registry.status").isEqualTo("UP")
                         .jsonPath("$.components.zookeeper").doesNotExist()
+                        .jsonPath("$.components.refreshScope").doesNotExist()
                         .jsonPath("$.components.discoveryComposite").doesNotExist()
                         .jsonPath("$.components.reactiveDiscoveryClients").doesNotExist());
     }
