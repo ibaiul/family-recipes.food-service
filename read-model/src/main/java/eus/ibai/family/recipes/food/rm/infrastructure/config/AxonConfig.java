@@ -17,6 +17,8 @@ public class AxonConfig {
 
     public static final String SSE_EVENT_PROCESSOR = "sse-event-processor";
 
+    public static final String RECIPE_TAG_METRICS_EVENT_PROCESSOR = "recipe-tag-metrics-event-processor";
+
     private final MeterRegistry meterRegistry;
 
     @Autowired
