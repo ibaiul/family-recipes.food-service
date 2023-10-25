@@ -22,5 +22,8 @@ public interface RecipeEntityRepository extends R2dbcRepository<RecipeEntity, St
     Flux<RecipeEntity> findByTag(@Param("tag") String tag);
 
     @Query("SELECT DISTINCT UNNEST(r.tags) FROM Recipe r")
+    Flux<String> findAllDistinctTags();
+
+    @Query("SELECT UNNEST(r.tags) FROM Recipe r")
     Flux<String> findAllTags();
 }

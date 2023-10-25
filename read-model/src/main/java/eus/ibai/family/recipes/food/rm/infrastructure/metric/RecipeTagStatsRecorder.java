@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static eus.ibai.family.recipes.food.rm.infrastructure.config.AxonConfig.RECIPE_TAG_METRICS_EVENT_PROCESSOR;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @ProcessingGroup(RECIPE_TAG_METRICS_EVENT_PROCESSOR)
@@ -35,6 +37,7 @@ public class RecipeTagStatsRecorder {
 
     @PostConstruct
     void recordInitialStats() {
+        log.debug("Publishing initial recipe tag count metrics.");
         recipeRepository.findAllTags()
                 .groupBy(String::valueOf)
                 .flatMap(group -> Mono.zip(Mono.just(group.key()), group.count()))
