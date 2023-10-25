@@ -49,6 +49,7 @@ public class RecipeTagStatsRecorder {
         AtomicLong count = recipeTagCount.get(event.recipeTag());
         if (count == null) {
             count = registerInitialValue(meterRegistry, event.recipeTag(), 0);
+            recipeTagCount.put(event.recipeTag(), count);
         }
         count.incrementAndGet();
     }

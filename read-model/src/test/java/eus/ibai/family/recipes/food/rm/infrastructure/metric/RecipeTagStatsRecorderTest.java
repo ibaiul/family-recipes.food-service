@@ -51,11 +51,13 @@ class RecipeTagStatsRecorderTest {
     void should_record_new_tags() {
         statsRecorder.recordInitialStats();
         RecipeTagAddedEvent event = new RecipeTagAddedEvent("recipeId", "Legume");
+        RecipeTagAddedEvent event2 = new RecipeTagAddedEvent("recipeId2", "Legume");
 
         statsRecorder.on(event);
+        statsRecorder.on(event2);
 
         double recordedTagAmount = meterRegistry.get("recipe.tags").tag("name", "Legume").gauge().value();
-        assertThat(recordedTagAmount).isEqualTo(1.0);
+        assertThat(recordedTagAmount).isEqualTo(2.0);
     }
 
     @Test
