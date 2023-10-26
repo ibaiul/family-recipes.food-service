@@ -32,6 +32,14 @@ axon:
     messages: jackson
   axonserver:
     enabled: false
+  eventhandling:
+    tokenstore:
+      claim-timeout: 15s
+    custom-processors:
+      recipe-tag-metrics-event-processor:
+        mode: tracking
+        event-availability-timeout-seconds: 10
+        token-claim-interval-seconds: 10
 
 sse:
   heartbeat:

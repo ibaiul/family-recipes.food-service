@@ -50,7 +50,7 @@ class RecipeProjectionQueryHandler {
 
     @QueryHandler
     Flux<String> getTags(FindRecipeTagsQuery query) {
-        return recipeEntityRepository.findAllTags();
+        return recipeEntityRepository.findAllDistinctTags();
     }
 
     private Mono<RecipeProjection> loadLazyRelations(RecipeEntity recipeEntityLazy) {

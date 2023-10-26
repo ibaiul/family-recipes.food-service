@@ -1,8 +1,7 @@
-package eus.ibai.family.recipes.food.rm.infrastructure;
+package eus.ibai.family.recipes.food.rm.infrastructure.metric;
 
 import eus.ibai.family.recipes.food.rm.domain.property.FindAllPropertiesQuery;
 import eus.ibai.family.recipes.food.rm.domain.recipe.FindRecipeByIdQuery;
-import eus.ibai.family.recipes.food.rm.infrastructure.metric.QueryProcessedInterceptor;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
