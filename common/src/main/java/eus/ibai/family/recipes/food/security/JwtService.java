@@ -31,18 +31,16 @@ import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.HS512;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class JwtService {
 
     private static final String TOKEN_TYPE = "Bearer";
 
     private static final String ROLE_CLAIM = "roles";
 
-    @Autowired
     private final JwtProperties jwtProperties;
 
-    @Autowired
     private final MapReactiveUserDetailsService userDetailsService;
 
     private JWSHeader signatureHeader;

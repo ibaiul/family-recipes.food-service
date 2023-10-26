@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -27,10 +26,8 @@ import static eus.ibai.family.recipes.food.rm.infrastructure.config.AxonConfig.R
 @ProcessingGroup(RECIPE_TAG_METRICS_EVENT_PROCESSOR)
 public class RecipeTagStatsRecorder {
 
-    @Autowired
     private final MeterRegistry meterRegistry;
 
-    @Autowired
     private final RecipeEntityRepository recipeRepository;
 
     private final Map<String, AtomicLong> recipeTagCount = new ConcurrentHashMap<>();
