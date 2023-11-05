@@ -92,3 +92,10 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+info:
+  app:
+    name: Family Recipes
+    description: Recipe book that also tracks what family members eat
+    service: Food Service (Common)
+    version: 1.0.0
