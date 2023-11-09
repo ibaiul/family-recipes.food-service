@@ -33,23 +33,20 @@ public class GlobalSecurityConfig {
 
     @Bean
     SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http, JwtService jwtService, List<PathAuthorizations> pathAuthorizations) {
-        List<PathAuthorization> publicPaths = pathAuthorizations.stream()
-                .map(PathAuthorizations::paths)
-                .flatMap(List::stream)
-                .filter(pathAuthorization -> pathAuthorization.requiredRoles() == null)
-                .toList();
-        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(jwtService, publicPaths);
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService);
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                .exceptionHandling(ex -> ex.accessDeniedHandler(new GlobalServerAccessDeniedHandler())
+                        .authenticationEntryPoint(new GlobalServerAuthenticationEntryPoint()))
                 .authorizeExchange(it -> setUpPathAuthorizations(it, pathAuthorizations))
-                .addFilterAt(jwtAuthorizationFilter, SecurityWebFiltersOrder.HTTP_BASIC)
+                .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.HTTP_BASIC)
                 .build();
     }
 
     @Bean
-    PathAuthorizations commonOpenPaths() {
+    PathAuthorizations commonPublicPaths() {
         List<PathAuthorization> pathAuthorizationList = List.of(
                 new PathAuthorization(GET, "/actuator/health"),
                 new PathAuthorization(GET, "/actuator/health/readiness"),
