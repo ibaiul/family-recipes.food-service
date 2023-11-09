@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -24,38 +25,41 @@ class JwtAuthenticationFilterTest {
     @Mock
     private JwtService jwtService;
 
+    @Spy
+    private TestWebFilterChain filterChain;
+
     @InjectMocks
-    private JwtAuthenticationFilter authorizationFilter;
+    private JwtAuthenticationFilter authenticationFilter;
 
     @Test
     void should_forward_requests_without_authentication() {
         MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/"));
-        TestWebFilterChain filterChain = spy(new TestWebFilterChain(null));
 
-        authorizationFilter.filter(exchange, filterChain)
+        authenticationFilter.filter(exchange, filterChain)
                 .as(StepVerifier::create)
                 .verifyComplete();
 
         verify(filterChain, times(1)).filter(exchange);
+        assertThat(filterChain.getAuthenticatedRole()).isNull();
         verifyNoInteractions(jwtService);
         assertThat(exchange.getResponse().getStatusCode()).isNull();
         assertThat(exchange.getResponse().getHeaders()).doesNotContainKey(HttpHeaders.WWW_AUTHENTICATE);
     }
 
     @Test
-    void should_forward_requests_with_authentication() {
-        String requiredRole = "ROLE_FAMILY_MEMBER";
+    void should_authenticate_requests() {
+        String expectedRole = "ROLE_FAMILY_MEMBER";
         String validToken = "validToken";
         MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken));
-        when(jwtService.getUserDetails(validToken)).thenReturn(Mono.just(Tuples.of("username", List.of(requiredRole))));
-        TestWebFilterChain filterChain = spy(new TestWebFilterChain(requiredRole));
+        when(jwtService.getUserDetails(validToken)).thenReturn(Mono.just(Tuples.of("username", List.of(expectedRole))));
 
-        authorizationFilter.filter(exchange, filterChain)
+        authenticationFilter.filter(exchange, filterChain)
                 .as(StepVerifier::create)
                 .verifyComplete();
 
         verify(filterChain, times(1)).filter(exchange);
+        assertThat(filterChain.getAuthenticatedRole()).isEqualTo(expectedRole);
         assertThat(exchange.getResponse().getStatusCode()).isNull();
         assertThat(exchange.getResponse().getHeaders()).doesNotContainKey(HttpHeaders.WWW_AUTHENTICATE);
     }
