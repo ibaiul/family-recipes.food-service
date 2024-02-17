@@ -11,10 +11,11 @@ dependencies {
     implementation ("org.axonframework:axon-spring-boot-starter:$axonVersion") {
         exclude group:"org.axonframework", module:"axon-server-connector"
     }
-    implementation "org.axonframework.extensions.reactor:axon-reactor-spring-boot-starter:$axonVersion"
+    implementation "org.axonframework.extensions.reactor:axon-reactor-spring-boot-starter:$axonSpringReactorVersion"
     implementation "org.axonframework.extensions.springcloud:axon-springcloud-spring-boot-autoconfigure:$axonSpringCloudVersion"
     runtimeOnly "org.postgresql:postgresql:$postgresqlVersion"
     implementation "org.flywaydb:flyway-core:$flywayVersion"
+    implementation "org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion"
 
     testImplementation(testFixtures(project(":common")))
 
