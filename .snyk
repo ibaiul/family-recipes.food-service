@@ -11,3 +11,7 @@ ignore:
   SNYK-JAVA-ORGSPRINGFRAMEWORK-6183818:
     - '*':
       reason: 'Not affected as not using MVC module.'
+  SNYK-ALPINE319-EXPAT-6241038:
+    - '*':
+      reason: 'Will be fixed with base image.'
+      expires: '2023-03-17'
