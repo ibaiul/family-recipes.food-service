@@ -83,7 +83,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          build-args: MODULE_NAME=read-model
+          build-args: |
+            MODULE_NAME=read-model
+            NEWRELIC_AGENT_VERSION=${{ vars.NEWRELIC_AGENT_VERSION }}
           tags: |
             ${{ vars.GH_IMAGE_QUERY }}:${{ github.sha }}
             ${{ vars.GH_IMAGE_QUERY }}:${{ env.RELEASE_TAG }}
@@ -102,7 +104,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          build-args: MODULE_NAME=write-model
+          build-args: |
+            MODULE_NAME=write-model
+            NEWRELIC_AGENT_VERSION=${{ vars.NEWRELIC_AGENT_VERSION }}
           tags: |
             ${{ vars.GH_IMAGE_COMMAND }}:${{ github.sha }}
             ${{ vars.GH_IMAGE_COMMAND }}:${{ env.RELEASE_TAG }}

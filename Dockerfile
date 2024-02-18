@@ -3,7 +3,7 @@ FROM eclipse-temurin:17-alpine
 ENV TZ="Europe/Madrid"
 
 RUN mkdir -p /usr/local/newrelic
-ARG NEWRELIC_AGENT_VERSION=8.4.0
+ARG NEWRELIC_AGENT_VERSION
 ADD https://download.newrelic.com/newrelic/java-agent/newrelic-agent/${NEWRELIC_AGENT_VERSION}/newrelic-agent-${NEWRELIC_AGENT_VERSION}.jar /usr/local/newrelic/newrelic.jar
 RUN chmod 444 /usr/local/newrelic/newrelic.jar
 ENV JAVA_OPTS="$JAVA_OPTS -javaagent:/usr/local/newrelic/newrelic.jar"

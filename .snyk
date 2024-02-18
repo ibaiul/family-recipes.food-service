@@ -1,7 +1,4 @@
 ignore:
-  SNYK-JAVA-IONETTY-1042268:
-    - '*':
-      reason: 'Not affected as Reactor Netty has explicitly enabled hostname verification by default.'
   SNYK-JAVA-COMH2DATABASE-31685:
     - '*':
       reason: 'Not affected as the web console is not accessible. Also, it is a test dependency that is not deployed in any environment.'
@@ -11,3 +8,10 @@ ignore:
   SNYK-JAVA-ORGAPACHEZOOKEEPER-5961102:
     - '*':
       reason: 'Not affected as this service is not a member of the Zookeeper cluster, it simply connects via client to register the service instance.'
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-6183818:
+    - '*':
+      reason: 'Not affected as not using MVC module.'
+  SNYK-ALPINE319-EXPAT-6241038:
+    - '*':
+      reason: 'Will be fixed with base image.'
+      expires: '2023-03-17'
