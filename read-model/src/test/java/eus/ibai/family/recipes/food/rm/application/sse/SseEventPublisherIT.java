@@ -1,6 +1,5 @@
 package eus.ibai.family.recipes.food.rm.application.sse;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eus.ibai.family.recipes.food.event.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -23,8 +22,6 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class SseEventPublisherIT {
-
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private EventBus eventBus;
