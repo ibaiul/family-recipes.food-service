@@ -38,6 +38,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.net.URI;
 import java.time.Instant;
@@ -56,15 +58,13 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.when;
 
 @ActiveProfiles("axon-distributed")
+@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class DistributedCommandBusIT {
 
+    @Container
     private static final ZookeeperContainer<?> zookeeperContainer = new ZookeeperContainer<>("bitnami/zookeeper")
             .withReuse(true);
-
-    static {
-        zookeeperContainer.start();
-    }
 
     @RegisterExtension
     private static final WireMockExtension wiremock = WireMockExtension.newInstance()

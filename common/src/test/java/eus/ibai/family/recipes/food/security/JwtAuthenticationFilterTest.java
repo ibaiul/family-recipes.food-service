@@ -63,4 +63,20 @@ class JwtAuthenticationFilterTest {
         assertThat(exchange.getResponse().getStatusCode()).isNull();
         assertThat(exchange.getResponse().getHeaders()).doesNotContainKey(HttpHeaders.WWW_AUTHENTICATE);
     }
+
+    @Test
+    void should_propagate_authentication_errors() {
+        String invalidToken = "invalidToken";
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken));
+        when(jwtService.getUserDetails(invalidToken)).thenReturn(Mono.error(new InvalidJwtTokenException("")));
+
+        authenticationFilter.filter(exchange, filterChain)
+                .as(StepVerifier::create)
+                .verifyError(InvalidJwtTokenException.class);
+
+        verifyNoInteractions(filterChain);
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
+        assertThat(exchange.getResponse().getHeaders()).doesNotContainKey(HttpHeaders.WWW_AUTHENTICATE);
+    }
 }

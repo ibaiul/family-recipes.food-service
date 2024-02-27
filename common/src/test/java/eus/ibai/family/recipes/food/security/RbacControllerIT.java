@@ -81,7 +81,7 @@ class RbacControllerIT {
     }
 
     @Test
-    void should_deny_access_when_requesting_not_security_configured_endpoint_without_credentials() {
+    void should_deny_access_to_endpoint_not_configured_in_security_when_not_authenticated() {
         webTestClient.get()
                 .uri("/test")
                 .exchange()
@@ -90,11 +90,11 @@ class RbacControllerIT {
     }
 
     @Test
-    void should_deny_access_when_requesting_not_security_configured_endpoint_and_authenticated() {
+    void should_deny_access_to_endpoint_not_configured_in_security_when_authenticated() {
         webTestClient.get()
                 .uri("/test")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
-                .expectStatus().isUnauthorized()
-                .expectHeader().valueMatches(WWW_AUTHENTICATE, "Bearer");
+                .expectStatus().isForbidden();
     }
 }

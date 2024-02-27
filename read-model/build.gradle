@@ -19,6 +19,10 @@ dependencies {
 
     implementation "org.axonframework:axon-test:$axonVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
+    testImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     testImplementation "io.r2dbc:r2dbc-h2:$h2R2dbcVersion"
     testImplementation "com.h2database:h2:$h2Version"
+
+    // SNYK-JAVA-ORGAPACHECOMMONS-6254296, SNYK-JAVA-ORGAPACHECOMMONS-6254297
+    testImplementation "org.apache.commons:commons-compress:1.26.0"
 }

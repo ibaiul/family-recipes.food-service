@@ -11,6 +11,15 @@ ignore:
   SNYK-JAVA-ORGSPRINGFRAMEWORK-6183818:
     - '*':
       reason: 'Not affected as not using MVC module.'
+  SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-6254467:
+    - '*':
+      reason: 'Not affected as not using isFullyAuthenticated method.'
+  SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-6254469:
+    - '*':
+      reason: 'Not affected as not using isFullyAuthenticated method.'
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-6261586:
+    - '*':
+      reason: 'Not affected as not parsing URLs with UriComponentsBuilder.'
   SNYK-ALPINE319-EXPAT-6241038:
     - '*':
       reason: 'Will be fixed with base image.'

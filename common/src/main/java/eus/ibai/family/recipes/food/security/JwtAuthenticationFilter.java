@@ -2,7 +2,6 @@ package eus.ibai.family.recipes.food.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -35,13 +34,7 @@ public class JwtAuthenticationFilter implements WebFilter {
                 .filter(header -> header.startsWith(ACCESS_TOKEN_PREFIX))
                 .flatMap(this::getAuthentication)
                 .switchIfEmpty(Mono.defer(() -> chain.filter(exchange).then(Mono.empty())))
-                .flatMap(authentication -> Mono.defer(() -> chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication))))
-                .onErrorResume(InvalidJwtTokenException.class, t -> {
-                    log.trace("Authentication failed: {}", t.getMessage());
-                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                    exchange.getResponse().getHeaders().add(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-                    return Mono.empty();
-                });
+                .flatMap(authentication -> Mono.defer(() -> chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication))));
     }
 
     private Mono<UsernamePasswordAuthenticationToken> getAuthentication(String authHeader) {
