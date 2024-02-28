@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:25432/family-recipes-food-command
+    username: ${DB_USER_DEV}
+    password: ${DB_PASS_DEV}
+  r2dbc:
+    url: r2dbc:postgresql://localhost:25432/family-recipes-food-query
+    username: ${DB_USER_DEV}
+    password: ${DB_PASS_DEV}
+  flyway:
+    url: jdbc:postgresql://localhost:25432/family-recipes-food-query
+    user: ${DB_USER_DEV}
+    password: ${DB_PASS_DEV}
+
+newrelic:
+  enabled: false
+  metrics:
+    ingest-uri: http://wiremock:8080/metric/v1
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

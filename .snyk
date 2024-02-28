@@ -8,9 +8,6 @@ ignore:
   SNYK-JAVA-ORGAPACHEZOOKEEPER-5961102:
     - '*':
       reason: 'Not affected as this service is not a member of the Zookeeper cluster, it simply connects via client to register the service instance.'
-  SNYK-JAVA-ORGSPRINGFRAMEWORK-6183818:
-    - '*':
-      reason: 'Not affected as not using MVC module.'
   SNYK-ALPINE319-EXPAT-6241038:
     - '*':
       reason: 'Will be fixed with base image.'

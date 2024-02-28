@@ -6,3 +6,4 @@ build/
 *.tgz
 **/out
 *.jks
+run-test-db.sh

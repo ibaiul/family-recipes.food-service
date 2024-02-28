@@ -8,27 +8,26 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static eus.ibai.family.recipes.food.test.TestUtils.stubNewRelicSendMetricResponse;
 import static java.lang.String.format;
 
 @Slf4j
+@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class AcceptanceTest {
 
     private static final int POSTGRES_PORT = 5432;
 
+    @Container
     private static final PostgreSQLContainer<?> postgreSqlContainer = new PostgreSQLContainer<>("postgres:13.8")
             .withDatabaseName("acceptance-test-db")
             .withUsername("sa")
             .withPassword("sa")
             .withReuse(true);
-
-    static {
-        postgreSqlContainer.start();
-        log.debug("Started PostgreSQL container on port {}", postgreSqlContainer.getMappedPort(POSTGRES_PORT));
-    }
 
     @RegisterExtension
     private static final WireMockExtension wiremock = WireMockExtension.newInstance()

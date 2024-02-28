@@ -1,10 +1,16 @@
 package eus.ibai.family.recipes.food.wm.infrastructure.zookeeper;
 
+import eus.ibai.family.recipes.food.wm.test.ZookeeperUtils;
 import lombok.NonNull;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 
 public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends GenericContainer<SELF> {
 
@@ -18,13 +24,7 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
 
     private boolean ssl = false;
 
-    private File keystore;
-
-    private String keystorePass;
-
-    private File truststore;
-
-    private String truststorePass;
+    private File clientProperties;
 
     private boolean auth = false;
 
@@ -33,12 +33,8 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
         addExposedPort(ZOOKEEPER_PORT);
     }
 
-    public SELF withSsl(File keystore, String keystorePass, File truststore, String truststorePass) {
+    public SELF withSsl() {
         this.ssl = true;
-        this.keystore = keystore;
-        this.keystorePass = keystorePass;
-        this.truststore = truststore;
-        this.truststorePass = truststorePass;
         return self();
     }
 
@@ -53,13 +49,35 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
         addEnv("ZOO_SERVERS", "0.0.0.0:2888:3888");
         if (ssl) {
             addExposedPort(ZOOKEEPER_SSL_PORT);
-            addFileSystemBind(keystore.getAbsolutePath(), KEYSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
-            addFileSystemBind(truststore.getAbsolutePath(), TRUSTSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
+
+            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-r--r--");
+            FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
+            File serverKeystore;
+            File serverTruststore;
+            try {
+                serverKeystore = Files.createTempFile("server-keystore-", ".jks", attr).toFile();
+                serverKeystore.deleteOnExit();
+                serverTruststore = Files.createTempFile("server-truststore-", ".jks", attr).toFile();
+                serverTruststore.deleteOnExit();
+                File clientKeystore = Files.createTempFile("client-keystore-", ".jks").toFile();
+                clientKeystore.deleteOnExit();
+                File clientTruststore = Files.createTempFile("client-truststore-", ".jks").toFile();
+                clientTruststore.deleteOnExit();
+                ZookeeperUtils.createJksFiles(serverKeystore, serverTruststore, clientKeystore, clientTruststore);
+
+                clientProperties = Files.createTempFile("client", ".properties").toFile();
+                ZookeeperUtils.createClientProperties(clientProperties, clientKeystore, clientTruststore);
+                clientProperties.deleteOnExit();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            addFileSystemBind(serverKeystore.getAbsolutePath(), KEYSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
+            addFileSystemBind(serverTruststore.getAbsolutePath(), TRUSTSTORE_CONTAINER_PATH, BindMode.READ_WRITE);
             addEnv("ZOO_TLS_CLIENT_ENABLE", "true");
             addEnv("ZOO_TLS_CLIENT_KEYSTORE_FILE", KEYSTORE_CONTAINER_PATH);
-            addEnv("ZOO_TLS_CLIENT_KEYSTORE_PASSWORD", keystorePass);
+            addEnv("ZOO_TLS_CLIENT_KEYSTORE_PASSWORD", "123456");
             addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_FILE", TRUSTSTORE_CONTAINER_PATH);
-            addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_PASSWORD", truststorePass);
+            addEnv("ZOO_TLS_CLIENT_TRUSTSTORE_PASSWORD", "123456");
         }
         if (auth) {
             addEnv("ZOO_ENABLE_AUTH", "yes");
@@ -75,5 +93,9 @@ public class ZookeeperContainer<SELF extends ZookeeperContainer<SELF>> extends G
 
     public int getHttpsPort() {
         return getMappedPort(ZOOKEEPER_SSL_PORT);
+    }
+
+    public File getClientProperties() {
+        return clientProperties;
     }
 }

@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:25432/family-recipes-food-command
+    username: ${DB_USER_DEV}
+    password: ${DB_PASS_DEV}
+  flyway:
+    url: jdbc:postgresql://localhost:25432/family-recipes-food-command
+    user: ${DB_USER_DEV}
+    password: ${DB_PASS_DEV}
+  cloud:
+    discovery:
+      enabled: &springCloudEnabled false
+    zookeeper:
+      enabled: *springCloudEnabled
+      connect-string: zk1:3181
+      client-config: /app/client.properties
+
+axon:
+  distributed:
+    enabled: *springCloudEnabled
+    spring-cloud:
+      rest-mode-url: /member-capabilities
+
+newrelic:
+  enabled: false
+  metrics:
+    ingest-uri: http://wiremock:8080/metric/v1
+
+management:
+  health:
+    service-registry:
+      enabled: *springCloudEnabled
+      interval: 60
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

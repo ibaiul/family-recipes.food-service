@@ -210,3 +210,8 @@ jobs:
         run: |
           CHART_NAME=$(find ./helm -name "family-recipes.food-service.command*.tgz" -printf "%f\n")
           helm push helm/${CHART_NAME} oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf helm/out

@@ -1,11 +1,11 @@
 package eus.ibai.family.recipes.food.wm.infrastructure.zookeeper;
 
-import eus.ibai.family.recipes.food.wm.test.ZookeeperUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,56 +17,27 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("axon-distributed")
+@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ZookeeperConfigIT {
 
-    private static final ZookeeperContainer<?> zookeeperContainer;
+    @Container
+    private static final ZookeeperContainer<?> zookeeperContainer = new ZookeeperContainer<>("bitnami/zookeeper")
+            .withSsl()
+            .withAuth()
+            .withReuse(true);
 
-    private static final File clientKeystore;
-
-    private static final File clientTruststore;
-
-    private static final File clientProperties;
-
-    static {
-        File serverKeystore;
-        File serverTruststore;
-        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-r--r--");
-        FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
-        try {
-            serverKeystore = Files.createTempFile("server-keystore-", ".jks", attr).toFile();
-            serverKeystore.deleteOnExit();
-            serverTruststore = Files.createTempFile("server-truststore-", ".jks", attr).toFile();
-            serverTruststore.deleteOnExit();
-            clientKeystore = Files.createTempFile("client-keystore-", ".jks").toFile();
-            clientKeystore.deleteOnExit();
-            clientTruststore = Files.createTempFile("client-truststore-", ".jks").toFile();
-            clientTruststore.deleteOnExit();
-            ZookeeperUtils.createJksFiles(serverKeystore, serverTruststore, clientKeystore, clientTruststore);
-
-            clientProperties = Files.createTempFile("client", ".properties").toFile();
-            ZookeeperUtils.createClientProperties(clientProperties, clientKeystore, clientTruststore);
-            clientProperties.deleteOnExit();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        zookeeperContainer = new ZookeeperContainer<>("bitnami/zookeeper")
-                .withSsl(serverKeystore, "123456", serverTruststore, "123456")
-                .withAuth()
-                .withReuse(true);
-        zookeeperContainer.start();
+    @AfterAll
+    static void afterAll() {
+        zookeeperContainer.stop();
     }
 
     @Autowired
@@ -119,6 +90,6 @@ class ZookeeperConfigIT {
     @DynamicPropertySource
     public static void setDynamicProperties(final DynamicPropertyRegistry registry) {
         registry.add("spring.cloud.zookeeper.connect-string", () -> "localhost:" + zookeeperContainer.getHttpsPort());
-        registry.add("spring.cloud.zookeeper.client-config", clientProperties::getAbsolutePath);
+        registry.add("spring.cloud.zookeeper.client-config", () -> zookeeperContainer.getClientProperties().getAbsolutePath());
     }
 }
