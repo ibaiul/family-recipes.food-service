@@ -19,8 +19,7 @@ import java.time.Duration;
 public class AwsConfig {
 
     @Bean
-    public S3AsyncClient s3client(@Value("${s3.endpoint}") String endpoint, @Value("${s3.region}") String region,
-                                  @Value("${s3.accessKey}") String accessKey, @Value("${s3.secretKey}") String secretKey) throws URISyntaxException {
+    public S3AsyncClient s3client(S3Properties s3Properties) throws URISyntaxException {
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder()
                 .writeTimeout(Duration.ZERO)
                 .maxConcurrency(64)
@@ -31,10 +30,10 @@ public class AwsConfig {
                 .pathStyleAccessEnabled(true)
                 .build();
         return S3AsyncClient.builder().httpClient(httpClient)
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
+                .region(Region.of(s3Properties.getRegion()))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(s3Properties.getAccessKey(), s3Properties.getSecretKey())))
                 .serviceConfiguration(serviceConfiguration)
-                .endpointOverride(new URI(endpoint))
+                .endpointOverride(new URI(s3Properties.getEndpoint()))
                 .build();
     }
 }

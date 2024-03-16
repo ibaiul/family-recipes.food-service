@@ -1,6 +1,7 @@
 package eus.ibai.family.recipes.food.wm.domain.file;
 
 import eus.ibai.family.recipes.food.wm.infrastructure.config.AwsConfig;
+import eus.ibai.family.recipes.food.wm.infrastructure.config.S3Properties;
 import eus.ibai.family.recipes.food.wm.infrastructure.file.S3FileStorage;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -59,7 +60,8 @@ class FileStorageIT {
     @BeforeEach
     void beforeEach() throws URISyntaxException {
         meterRegistry = new SimpleMeterRegistry();
-        s3Client = spy(new AwsConfig().s3client(localstack.getEndpoint().toASCIIString(), localstack.getRegion(), localstack.getAccessKey(), localstack.getSecretKey()));
+        S3Properties s3Properties = new S3Properties(localstack.getEndpoint().toASCIIString(), localstack.getRegion(), localstack.getAccessKey(), localstack.getSecretKey());
+        s3Client = spy(new AwsConfig().s3client(s3Properties));
         fileStorage = new S3FileStorage(s3Client, "bucket", meterRegistry);
         CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
                 .bucket("bucket")
@@ -209,10 +211,8 @@ class FileStorageIT {
     }
 
     private String getMetadataItem(GetObjectResponse sdkResponse, String key, String defaultValue) {
-        for (Map.Entry<String, String> entry : sdkResponse.metadata()
-                .entrySet()) {
-            if (entry.getKey()
-                    .equalsIgnoreCase(key)) {
+        for (Map.Entry<String, String> entry : sdkResponse.metadata().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(key)) {
                 return entry.getValue();
             }
         }

@@ -126,7 +126,7 @@ public class RecipeServiceImpl implements RecipeService {
     private Mono<Void> validateImage(String mediaType, long length) {
         RecipeProperties.ImageProperties imageProperties = properties.getImages();
         if (length < imageProperties.minSize() || length > imageProperties.maxSize()) {
-            return Mono.error(new InvalidFileException("File size must be between %d - %d KB. Size: %d".formatted(imageProperties.minSize(), imageProperties.maxSize(), length)));
+            return Mono.error(new InvalidFileException("File size must be between %d - %d bytes. Size: %d".formatted(imageProperties.minSize(), imageProperties.maxSize(), length)));
         }
         if (!imageProperties.mediaTypes().contains(mediaType)) {
             return Mono.error(new InvalidFileException("File type must be an image. Type: " + mediaType));
