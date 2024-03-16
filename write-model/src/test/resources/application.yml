@@ -40,6 +40,22 @@ spring:
       - org.springframework.cloud.client.discovery.composite.CompositeDiscoveryClientAutoConfiguration
       - org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
 
+recipes:
+  images:
+    storagePath: recipes/images/
+    mediaTypes:
+      - image/png
+      - image/jpeg
+    minSize: 10240
+    maxSize: 2048000
+
+s3:
+  endpoint: http://localhost:2000
+  region: eu-test-1
+  bucket: test-bucket
+  accessKey: abcd
+  secretKey: 1234
+
 axon:
   serializer:
     general: jackson

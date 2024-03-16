@@ -2,10 +2,8 @@ package eus.ibai.family.recipes.food.wm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
 import eus.ibai.family.recipes.food.security.*;
-import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeIngredientDto;
-import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeTagDto;
-import eus.ibai.family.recipes.food.wm.application.dto.CreateRecipeDto;
-import eus.ibai.family.recipes.food.wm.application.dto.UpdateRecipeDto;
+import eus.ibai.family.recipes.food.wm.application.dto.*;
+import eus.ibai.family.recipes.food.wm.domain.file.InvalidFileException;
 import eus.ibai.family.recipes.food.wm.domain.recipe.*;
 import eus.ibai.family.recipes.food.wm.infrastructure.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,15 +22,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
+import static eus.ibai.family.recipes.food.util.Utils.generateId;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.IMAGE_PNG;
+import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 @WebFluxTest(controllers = {RecipeController.class, AuthController.class})
 @Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
@@ -341,6 +346,82 @@ class RecipeControllerIT {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void should_add_image_to_recipe() {
+        String imageId = generateId();
+        when(recipeService.addRecipeImage(eq("recipeId"), eq(IMAGE_PNG_VALUE), eq(10241L), any())).thenReturn(Mono.just(imageId));
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/images")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(IMAGE_PNG)
+                .body(BodyInserters.fromValue(ByteBuffer.allocate(10241)))
+                .exchange()
+                .expectHeader().location("/recipes/recipeId/images/" + imageId)
+                .expectStatus().isCreated();
+    }
+
+    @Test
+    void should_not_add_image_if_recipe_does_not_exist() {
+        when(recipeService.addRecipeImage(eq("recipeId"), eq(IMAGE_PNG_VALUE), eq(0L), any(Flux.class))).thenReturn(Mono.error(new RecipeNotFoundException("")));
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/images")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(IMAGE_PNG)
+                .body(BodyInserters.fromValue(ByteBuffer.allocate(0)))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_add_image_when_image_is_invalid() {
+        String errorMessage = "Invalid file";
+        when(recipeService.addRecipeImage(eq("recipeId"), eq(IMAGE_PNG_VALUE), eq(0L), any(Flux.class))).thenReturn(Mono.error(new InvalidFileException(errorMessage)));
+
+        webTestClient.post()
+                .uri("/recipes/recipeId/images")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(IMAGE_PNG)
+                .body(BodyInserters.fromValue(ByteBuffer.allocate((0))))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ErrorResponse.class).isEqualTo(new ErrorResponse(errorMessage));
+    }
+
+    @Test
+    void should_remove_image_from_recipe() {
+        when(recipeService.removeRecipeImage("recipeId", "imageId")).thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/images/imageId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    void should_not_remove_image_if_recipe_does_not_exist() {
+        when(recipeService.removeRecipeImage("recipeId", "imageId")).thenReturn(Mono.error(new RecipeNotFoundException("")));
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/images/imageId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_remove_image_if_it_does_not_exist() {
+        when(recipeService.removeRecipeImage("recipeId", "imageId")).thenReturn(Mono.error(new RecipeImageNotFoundException("")));
+
+        webTestClient.delete()
+                .uri("/recipes/recipeId/images/imageId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test

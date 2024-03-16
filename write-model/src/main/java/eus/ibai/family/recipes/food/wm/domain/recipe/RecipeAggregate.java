@@ -29,6 +29,8 @@ public class RecipeAggregate {
 
     private final Set<String> tags = new HashSet<>();
 
+    private final Set<String> images = new HashSet<>();
+
     @AggregateMember
     private final Set<RecipeIngredientEntity> ingredients = new HashSet<>();
 
@@ -114,6 +116,34 @@ public class RecipeAggregate {
     @EventSourcingHandler
     public void on(RecipeTagRemovedEvent event) {
         tags.remove(event.recipeTag());
+    }
+
+    @CommandHandler
+    public void handle(AddRecipeImageCommand command) {
+        boolean containsRecipeImage = images.stream().anyMatch(recipeImage -> recipeImage.equals(command.imageId()));
+        if (containsRecipeImage) {
+            return;
+        }
+
+        apply(new RecipeImageAddedEvent(id, command.imageId()));
+    }
+
+    @EventSourcingHandler
+    public void on(RecipeImageAddedEvent event) {
+        images.add(event.imageId());
+    }
+
+    @CommandHandler
+    public void handle(RemoveRecipeImageCommand command) {
+        if (!images.contains(command.imageId())) {
+            throw new RecipeImageNotFoundException("Recipe:" + id + ", Image: " + command.imageId());
+        }
+        apply(new RecipeImageRemovedEvent(id, command.imageId()));
+    }
+
+    @EventSourcingHandler
+    public void on(RecipeImageRemovedEvent event) {
+        images.remove(event.imageId());
     }
 
     @CommandHandler

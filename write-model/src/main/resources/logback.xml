@@ -12,7 +12,7 @@
 
     <logger name="eus.ibai" level="DEBUG"/>
     <logger name="org.flywaydb" level="INFO"/>
-    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework" level="DEBUG"/>
     <logger name="org.springframework.web.server.adapter.HttpWebHandlerAdapter" level="INFO"/>
     <logger name="org.springframework.r2dbc.core.DefaultDatabaseClient" level="INFO"/>
 </configuration>

@@ -1,7 +1,9 @@
 package eus.ibai.family.recipes.food.wm.domain.recipe;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
 import java.util.Set;
 
 public interface RecipeService {
@@ -19,4 +21,8 @@ public interface RecipeService {
     Mono<Void> addRecipeTag(String recipeId, String tag);
 
     Mono<Void> removeRecipeTag(String recipeId, String tag);
+
+    Mono<String> addRecipeImage(String recipeId, String mediaType, long length, Flux<ByteBuffer> fileContent);
+
+    Mono<Void> removeRecipeImage(String recipeId, String imageId);
 }

@@ -4,6 +4,8 @@ import java.util.Optional;
 
 public interface RecipeConstraintRepository {
 
+    boolean idExists(String recipeId);
+
     boolean nameExists(String recipeName);
 
     boolean anotherRecipeContainsName(String recipeId, String recipeName);

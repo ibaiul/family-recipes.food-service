@@ -1,21 +1,25 @@
 package eus.ibai.family.recipes.food.wm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
-import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeIngredientDto;
-import eus.ibai.family.recipes.food.wm.application.dto.AddRecipeTagDto;
-import eus.ibai.family.recipes.food.wm.application.dto.CreateRecipeDto;
-import eus.ibai.family.recipes.food.wm.application.dto.UpdateRecipeDto;
+import eus.ibai.family.recipes.food.wm.application.dto.*;
+import eus.ibai.family.recipes.food.wm.domain.file.InvalidFileException;
 import eus.ibai.family.recipes.food.wm.domain.recipe.*;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MimeType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.nio.ByteBuffer;
+import java.util.Optional;
 
 @Validated
 @RestController
@@ -69,7 +73,24 @@ public class RecipeController {
         return recipeService.removeRecipeTag(recipeId, tag);
     }
 
-    @ExceptionHandler({ RecipeNotFoundException.class, RecipeIngredientNotFoundException.class, RecipeTagNotFoundException.class})
+    @PostMapping("/{id}/images")
+    public Mono<ResponseEntity<String>> addRecipeImage(@PathVariable("id") String recipeId, @RequestHeader HttpHeaders headers, @RequestBody Flux<ByteBuffer> body, UriComponentsBuilder uriComponentsBuilder) {
+        long length = headers.getContentLength();
+        String mediaType = Optional.ofNullable(headers.getContentType())
+                .map(MimeType::toString)
+                .orElse("");
+        return recipeService.addRecipeImage(recipeId, mediaType, length, body)
+                .map(imageId -> uriComponentsBuilder.path("/recipes/{id}/images/{id}").buildAndExpand(recipeId, imageId).toUri())
+                .map(uri -> ResponseEntity.created(uri).build());
+    }
+
+    @DeleteMapping("/{id}/images/{id2}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> removeImage(@PathVariable("id") String recipeId, @PathVariable("id2") String imageId) {
+        return recipeService.removeRecipeImage(recipeId, imageId);
+    }
+
+    @ExceptionHandler({ RecipeNotFoundException.class, RecipeIngredientNotFoundException.class, RecipeTagNotFoundException.class, RecipeImageNotFoundException.class})
     public ResponseEntity<Void> handleNotFoundExceptions() {
         return ResponseEntity.notFound().build();
     }
@@ -79,8 +100,9 @@ public class RecipeController {
         return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
 
-    @ExceptionHandler({ ConstraintViolationException.class })
-    public ResponseEntity<Void> handleBadRequestExceptions() {
-        return ResponseEntity.badRequest().build();
+    @ExceptionHandler({ ConstraintViolationException.class, InvalidFileException.class })
+    public ResponseEntity<ErrorResponse> handleBadRequestExceptions(Exception exception) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(exception.getMessage()));
     }
 }

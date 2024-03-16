@@ -12,7 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static eus.ibai.family.recipes.food.test.TestUtils.UUID_PATTERN_STRING;
@@ -29,21 +33,23 @@ class UserJourneyTest extends AcceptanceTest {
     private ApplicationContext applicationContext;
 
     @BeforeEach
-    void beforeEach() {
+    void beforeEach() throws ExecutionException, InterruptedException {
+        createS3Bucket();
         webTestClient = WebTestClient.bindToApplicationContext(applicationContext).build();
         bearerToken = authenticate(webTestClient).accessToken();
     }
 
     @Test
-    void as_a_user_I_can_manage_recipes() {
+    void as_a_user_I_can_manage_recipes() throws IOException {
         String recipeUrl = createRecipe("Pasta carbonara");
         updateRecipe(recipeUrl, "Spaghetti carbonara", Set.of("https://pasta.com"));
         String recipeIngredientUrl = addRecipeIngredient(recipeUrl, "Spaghetti");
-        createIngredient("Egg");
         addRecipeIngredient(recipeUrl, "Egg");
         removeRecipeIngredient(recipeIngredientUrl);
         tagRecipe(recipeUrl, "First course");
         untagRecipe(recipeUrl, "First course");
+        String recipeImageUrl = addRecipeImage(recipeUrl);
+        removeRecipeImage(recipeImageUrl);
         deleteRecipe(recipeUrl);
     }
 
@@ -144,6 +150,33 @@ class UserJourneyTest extends AcceptanceTest {
     private void untagRecipe(String recipeUrl, String tag) {
         webTestClient.delete()
                 .uri(format(recipeUrl + "/tags?name=" + tag))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNoContent()
+                .expectBody().isEmpty();
+    }
+
+    private String addRecipeImage(String recipeUrl) throws IOException {
+        byte[] data = Files.readAllBytes(Paths.get("src/test/resources/images/albondigas.png"));
+        AtomicReference<String> recipeImageUrl = new AtomicReference<>();
+        webTestClient.post()
+                .uri(format(recipeUrl + "/images"))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .contentType(MediaType.IMAGE_PNG)
+                .body(BodyInserters.fromValue(data))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectHeader().valueMatches("location", format("%s/images/%s", recipeUrl, UUID_PATTERN_STRING))
+                .expectHeader().values("location", headerValues -> {
+                    recipeImageUrl.set(headerValues.get(0));
+                })
+                .expectBody().isEmpty();
+        return recipeImageUrl.get();
+    }
+
+    private void removeRecipeImage(String recipeImageUrl) {
+        webTestClient.delete()
+                .uri(format(recipeImageUrl))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .exchange()
                 .expectStatus().isNoContent()

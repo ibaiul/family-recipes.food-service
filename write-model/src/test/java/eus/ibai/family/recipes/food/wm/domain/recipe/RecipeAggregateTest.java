@@ -173,4 +173,56 @@ class RecipeAggregateTest {
                 .expectException(RecipeTagNotFoundException.class)
                 .expectNoEvents();
     }
+
+    @Test
+    void should_add_recipe_image() {
+        String recipeId = "recipeId";
+        String expectedImageId = "imageId";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"))
+                .when(new AddRecipeImageCommand(recipeId, expectedImageId))
+                .expectEvents(new RecipeImageAddedEvent(recipeId, expectedImageId))
+                .expectState(state -> {
+                    assertThat(state.getId()).isEqualTo(recipeId);
+                    assertThat(state.getName()).isEqualTo("Pasta carbonara");
+                    assertThat(state.getImages()).containsExactly(expectedImageId);
+                });
+    }
+
+    @Test
+    void should_not_add_recipe_image_if_already_added() {
+        String recipeId = "recipeId";
+        String imageId = "imageId";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"),
+                        new RecipeImageAddedEvent(recipeId, imageId))
+                .when(new AddRecipeImageCommand(recipeId, imageId))
+                .expectNoEvents();
+    }
+
+    @Test
+    void should_remove_recipe_image_when_present() {
+        String recipeId = "recipeId";
+        String imageId = "imageId";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"),
+                        new RecipeImageAddedEvent(recipeId, imageId))
+                .when(new RemoveRecipeImageCommand(recipeId, imageId))
+                .expectEvents(new RecipeImageRemovedEvent(recipeId, imageId))
+                .expectState(state -> {
+                    assertThat(state.getId()).isEqualTo(recipeId);
+                    assertThat(state.getName()).isEqualTo("Pasta carbonara");
+                    assertThat(state.getImages()).isEmpty();
+                });
+    }
+
+    @Test
+    void should_not_remove_recipe_image_when_not_present() {
+        String recipeId = "recipeId";
+
+        fixture.given(new RecipeCreatedEvent(recipeId, "Pasta carbonara"))
+                .when(new RemoveRecipeImageCommand(recipeId, "imageId"))
+                .expectException(RecipeImageNotFoundException.class)
+                .expectNoEvents();
+    }
 }
