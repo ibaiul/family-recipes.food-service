@@ -15,6 +15,11 @@ public class RecipeConstraintRepositoryImpl implements RecipeConstraintRepositor
     private IngredientNameConstraintRepository ingredientNameConstraintRepository;
 
     @Override
+    public boolean idExists(String recipeId) {
+        return recipeNameConstraintRepository.existsById(recipeId);
+    }
+
+    @Override
     public boolean nameExists(String recipeName) {
         return recipeNameConstraintRepository.nameExists(recipeName);
     }

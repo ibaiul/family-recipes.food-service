@@ -11,6 +11,9 @@ spring:
       connect-string: zk1:3181
       client-config: /app/client.properties
 
+s3:
+  endpoint: http://localstack:4567
+
 axon:
   distributed:
     enabled: *springCloudEnabled

@@ -16,12 +16,15 @@ dependencies {
     runtimeOnly "org.postgresql:postgresql:$postgresqlVersion"
     implementation "org.flywaydb:flyway-core:$flywayVersion"
     implementation "org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion"
+    implementation "software.amazon.awssdk:s3:${awsSdkVersion}"
+    implementation "software.amazon.awssdk:netty-nio-client:${awsSdkVersion}"
 
     testImplementation(testFixtures(project(":common")))
 
     implementation "org.axonframework:axon-test:$axonVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
+    testImplementation "org.testcontainers:localstack:$testcontainersVersion"
     testImplementation "com.h2database:h2:$h2Version"
 
     // SNYK-JAVA-ORGAPACHECOMMONS-6254296, SNYK-JAVA-ORGAPACHECOMMONS-6254297
