@@ -1,18 +1,18 @@
 spring:
   datasource:
-#    url: jdbc:postgresql://db:5432/local-command-db
+    url: jdbc:postgresql://db:5432/local-command-db
   flyway:
-#    url: jdbc:postgresql://db:5432/local-command-db
+    url: jdbc:postgresql://db:5432/local-command-db
   cloud:
     discovery:
-      enabled: &springCloudEnabled false
+      enabled: &springCloudEnabled true
     zookeeper:
       enabled: *springCloudEnabled
       connect-string: zk1:3181
       client-config: /app/client.properties
 
 s3:
-#  endpoint: http://localstack:4567
+  endpoint: http://localstack:4567
 
 axon:
   distributed:

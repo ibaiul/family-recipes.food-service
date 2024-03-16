@@ -2,6 +2,7 @@ package eus.ibai.family.recipes.food.wm;
 
 import eus.ibai.family.recipes.food.wm.application.dto.*;
 import eus.ibai.family.recipes.food.wm.test.AcceptanceTest;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -40,7 +40,7 @@ class UserJourneyTest extends AcceptanceTest {
     }
 
     @Test
-    void as_a_user_I_can_manage_recipes() throws IOException {
+    void as_a_user_I_can_manage_recipes() {
         String recipeUrl = createRecipe("Pasta carbonara");
         updateRecipe(recipeUrl, "Spaghetti carbonara", Set.of("https://pasta.com"));
         String recipeIngredientUrl = addRecipeIngredient(recipeUrl, "Spaghetti");
@@ -94,9 +94,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", "/recipes/" + UUID_PATTERN_STRING)
-                .expectHeader().values("location", headerValues -> {
-                   recipeUrl.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> recipeUrl.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return recipeUrl.get();
     }
@@ -124,9 +122,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", format("%s/ingredients/%s", recipeUrl, UUID_PATTERN_STRING))
-                .expectHeader().values("location", headerValues -> {
-                    recipeIngredientUrl.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> recipeIngredientUrl.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return recipeIngredientUrl.get();
     }
@@ -156,7 +152,8 @@ class UserJourneyTest extends AcceptanceTest {
                 .expectBody().isEmpty();
     }
 
-    private String addRecipeImage(String recipeUrl) throws IOException {
+    @SneakyThrows
+    private String addRecipeImage(String recipeUrl) {
         byte[] data = Files.readAllBytes(Paths.get("src/test/resources/images/albondigas.png"));
         AtomicReference<String> recipeImageUrl = new AtomicReference<>();
         webTestClient.post()
@@ -167,9 +164,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", format("%s/images/%s", recipeUrl, UUID_PATTERN_STRING))
-                .expectHeader().values("location", headerValues -> {
-                    recipeImageUrl.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> recipeImageUrl.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return recipeImageUrl.get();
     }
@@ -198,9 +193,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", "/ingredients/" + UUID_PATTERN_STRING)
-                .expectHeader().values("location", headerValues -> {
-                    ingredientUrl.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> ingredientUrl.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return ingredientUrl.get();
     }
@@ -228,9 +221,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", format("%s/properties/%s", ingredientUrl, UUID_PATTERN_STRING))
-                .expectHeader().values("location", headerValues -> {
-                    ingredientProperty.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> ingredientProperty.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return ingredientProperty.get();
     }
@@ -263,9 +254,7 @@ class UserJourneyTest extends AcceptanceTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().valueMatches("location", "/properties/" + UUID_PATTERN_STRING)
-                .expectHeader().values("location", headerValues -> {
-                    propertyUrl.set(headerValues.get(0));
-                })
+                .expectHeader().values("location", headerValues -> propertyUrl.set(headerValues.get(0)))
                 .expectBody().isEmpty();
         return propertyUrl.get();
     }
