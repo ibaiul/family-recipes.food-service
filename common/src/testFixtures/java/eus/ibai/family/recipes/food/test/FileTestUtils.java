@@ -1,6 +1,8 @@
 package eus.ibai.family.recipes.food.test;
 
 import eus.ibai.family.recipes.food.file.StorageFile;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.SneakyThrows;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -16,7 +18,9 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class FileTestUtils {
 
@@ -53,10 +57,11 @@ public class FileTestUtils {
     }
 
     @SneakyThrows
-    private static StorageFile retrieveFile(S3AsyncClient s3Client, String fileKey) {
+    private static StorageFile retrieveFile(S3AsyncClient s3Client, String imageId) {
+        String fileKey = "recipes/images/" + imageId;
         GetObjectRequest request = GetObjectRequest.builder()
                 .bucket(TEST_BUCKET)
-                .key("recipes/images/" + fileKey)
+                .key(fileKey)
                 .build();
 
         ResponseBytes<GetObjectResponse> response = s3Client.getObject(request, AsyncResponseTransformer.toBytes()).get();
@@ -64,10 +69,9 @@ public class FileTestUtils {
 
         assertThat(getObjectResponse.sdkHttpResponse().isSuccessful()).isTrue();
 
-        String filename = getMetadataItem(getObjectResponse,"filename", fileKey);
         String contentType = getObjectResponse.contentType();
         Long contentLength = getObjectResponse.contentLength();
-        return new StorageFile(filename, contentType, contentLength, response.asByteBuffer(), getObjectResponse.metadata());
+        return new StorageFile(fileKey, contentType, contentLength, response.asByteBuffer(), getObjectResponse.metadata());
     }
 
     @SneakyThrows
@@ -91,12 +95,13 @@ public class FileTestUtils {
         return fileKey;
     }
 
-    private static String getMetadataItem(GetObjectResponse sdkResponse, String key, String defaultValue) {
-        for (Map.Entry<String, String> entry : sdkResponse.metadata().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(key)) {
-                return entry.getValue();
-            }
-        }
-        return defaultValue;
+    public static void verifyS3MetricRecorded(MeterRegistry meterRegistry, String action, String status, int expected) {
+        await().atMost(1, SECONDS).untilAsserted(() -> {
+            DistributionSummary metric = meterRegistry.find("s3." + action)
+                    .tag("status", status)
+                    .summary();
+            assertThat(metric).isNotNull();
+            assertThat(metric.count()).isEqualTo(expected);
+        });
     }
 }

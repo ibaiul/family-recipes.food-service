@@ -3,7 +3,6 @@ package eus.ibai.family.recipes.food.wm.domain.file;
 import eus.ibai.family.recipes.food.wm.infrastructure.config.AwsConfig;
 import eus.ibai.family.recipes.food.wm.infrastructure.config.S3Properties;
 import eus.ibai.family.recipes.food.wm.infrastructure.file.S3FileStorage;
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,9 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static eus.ibai.family.recipes.food.test.FileTestUtils.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -80,7 +76,7 @@ class FileStorageIT {
                 .verifyComplete();
 
         verifyStoredRecipeImage(s3Client, fileId.get(), IMAGE_PNG_VALUE, data.length, fileMetadata);
-        verifyUploadSucceededMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "upload", "succeeded", 1);
     }
 
     @ParameterizedTest
@@ -95,7 +91,7 @@ class FileStorageIT {
                 .as(StepVerifier::create)
                 .verifyError(IOException.class);
 
-        verifyUploadFailedMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "upload", "failed", 1);
     }
 
     @Test
@@ -106,7 +102,7 @@ class FileStorageIT {
                 .as(StepVerifier::create)
                 .verifyComplete();
 
-        verifyDeleteSucceededMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "delete", "succeeded", 1);
     }
 
     @ParameterizedTest
@@ -118,7 +114,7 @@ class FileStorageIT {
                 .as(StepVerifier::create)
                 .verifyError(IOException.class);
 
-        verifyDeleteFailedMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "delete", "failed", 1);
     }
 
     static Stream<Arguments> should_map_exception_when_storing_file_fails() {
@@ -133,31 +129,5 @@ class FileStorageIT {
                 Arguments.of(CompletableFuture.failedFuture(new Throwable(""))),
                 Arguments.of(CompletableFuture.completedFuture(DeleteObjectResponse.builder().sdkHttpResponse(SdkHttpResponse.builder().statusCode(500).build()).build()))
         );
-    }
-
-    private void verifyUploadSucceededMetricRecorded(int expected) {
-        verifyS3MetricRecorded("upload", "succeeded", expected);
-    }
-
-    private void verifyUploadFailedMetricRecorded(int expected) {
-        verifyS3MetricRecorded("upload", "failed", expected);
-    }
-
-    private void verifyDeleteSucceededMetricRecorded(int expected) {
-        verifyS3MetricRecorded("delete", "succeeded", expected);
-    }
-
-    private void verifyDeleteFailedMetricRecorded(int expected) {
-        verifyS3MetricRecorded("delete", "failed", expected);
-    }
-
-    private void verifyS3MetricRecorded(String action, String status, int expected) {
-        await().atMost(1, SECONDS).untilAsserted(() -> {
-            DistributionSummary metric = meterRegistry.find("s3." + action)
-                    .tag("status", status)
-                    .summary();
-            assertThat(metric).isNotNull();
-            assertThat(metric.count()).isEqualTo(expected);
-        });
     }
 }

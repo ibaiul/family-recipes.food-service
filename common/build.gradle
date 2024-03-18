@@ -14,6 +14,7 @@ dependencies {
     testFixturesCompileOnly "org.projectlombok:lombok:${lombokVersion}"
 
     testFixturesImplementation "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
+    testFixturesImplementation "io.micrometer:micrometer-core:$micrometerVersion"
     testFixturesImplementation "software.amazon.awssdk:s3:${awsSdkVersion}"
     testFixturesImplementation "software.amazon.awssdk:netty-nio-client:${awsSdkVersion}"
     testFixturesImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion") {

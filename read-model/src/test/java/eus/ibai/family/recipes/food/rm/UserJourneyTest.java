@@ -54,7 +54,7 @@ class UserJourneyTest extends AcceptanceTest {
         webTestClient = WebTestClient.bindToApplicationContext(applicationContext)
                 .configureClient()
                 .exchangeStrategies(ExchangeStrategies.builder()
-                        .codecs(config ->  config.defaultCodecs().maxInMemorySize(22000))
+                        .codecs(config ->  config.defaultCodecs().maxInMemorySize(50000))
                         .build())
                 .build();
         bearerToken = authenticate(webTestClient).accessToken();

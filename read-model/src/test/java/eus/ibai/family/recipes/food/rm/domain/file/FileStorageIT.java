@@ -4,7 +4,6 @@ import eus.ibai.family.recipes.food.file.StorageFile;
 import eus.ibai.family.recipes.food.rm.infrastructure.config.AwsConfig;
 import eus.ibai.family.recipes.food.rm.infrastructure.config.S3Properties;
 import eus.ibai.family.recipes.food.rm.infrastructure.file.S3FileStorage;
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,10 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,9 +34,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static eus.ibai.family.recipes.food.test.FileTestUtils.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -72,12 +71,12 @@ class FileStorageIT {
                 .consumeNextWith(file -> {
                     byte[] dst = new byte[(int) file.contentLength()];
                     file.content().get(dst);
-                    downloadResponse.set(new StorageFile(file.fileName(), file.contentType(), file.contentLength(), ByteBuffer.wrap(dst), file.metadata()));
+                    downloadResponse.set(new StorageFile(file.storagePath(), file.contentType(), file.contentLength(), ByteBuffer.wrap(dst), file.metadata()));
                 })
                 .verifyComplete();
 
         verifyDownloadedRecipeImage(downloadResponse.get().content());
-        verifyDownloadSucceededMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "download", "succeeded", 1);
     }
 
     @ParameterizedTest
@@ -89,7 +88,7 @@ class FileStorageIT {
                 .as(StepVerifier::create)
                 .verifyError(expectedException);
 
-        verifyDownloadFailedMetricRecorded(1);
+        verifyS3MetricRecorded(meterRegistry, "download", "failed", 1);
     }
 
     static Stream<Arguments> should_map_exception_when_downloading_file_fails() {
@@ -98,23 +97,5 @@ class FileStorageIT {
             Arguments.of(CompletableFuture.failedFuture(new Throwable("")), IOException.class),
             Arguments.of(CompletableFuture.completedFuture(ResponseBytes.fromByteArray(GetObjectResponse.builder().sdkHttpResponse(SdkHttpResponse.builder().statusCode(500).build()).build(), new byte[0])), IOException.class)
         );
-    }
-
-    private void verifyDownloadSucceededMetricRecorded(int expected) {
-        verifyS3MetricRecorded("download", "succeeded", expected);
-    }
-
-    private void verifyDownloadFailedMetricRecorded(int expected) {
-        verifyS3MetricRecorded("download", "failed", expected);
-    }
-
-    private void verifyS3MetricRecorded(String action, String status, int expected) {
-        await().atMost(1, SECONDS).untilAsserted(() -> {
-            DistributionSummary metric = meterRegistry.find("s3." + action)
-                    .tag("status", status)
-                    .summary();
-            assertThat(metric).isNotNull();
-            assertThat(metric.count()).isEqualTo(expected);
-        });
     }
 }
