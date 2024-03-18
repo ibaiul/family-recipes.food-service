@@ -112,7 +112,7 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     public Mono<Void> removeRecipeImage(String recipeId, String imageId) {
         return send(new RemoveRecipeImageCommand(recipeId, imageId))
-                .then(Mono.defer(() -> fileStorage.deleteFile("recipes/images/" + imageId)))
+                .then(Mono.defer(() -> fileStorage.deleteFile(properties.getImages().storagePath() + imageId)))
                 .onErrorComplete(IOException.class);
     }
 

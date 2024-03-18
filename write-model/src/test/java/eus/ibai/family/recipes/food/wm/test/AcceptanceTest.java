@@ -13,15 +13,10 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.BucketCannedACL;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-
-import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static eus.ibai.family.recipes.food.test.FileTestUtils.TEST_BUCKET;
 import static eus.ibai.family.recipes.food.test.TestUtils.stubNewRelicSendMetricResponse;
 import static java.lang.String.format;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
@@ -49,7 +44,7 @@ public abstract class AcceptanceTest {
             .build();
 
     @Autowired
-    private S3AsyncClient s3Client;
+    protected S3AsyncClient s3Client;
 
     @BeforeEach
     void beforeEach() {
@@ -67,20 +62,8 @@ public abstract class AcceptanceTest {
         registry.add("s3.region", localstack::getRegion);
         registry.add("s3.accessKey", localstack::getAccessKey);
         registry.add("s3.secretKey", localstack::getSecretKey);
-        registry.add("s3.bucket", () -> "family-recipes.food-service");
+        registry.add("s3.bucket", () -> TEST_BUCKET);
         registry.add("newrelic.enabled", () -> "true");
         registry.add("newrelic.metrics.ingest-uri", () -> format("%s/metric/v1", wiremock.baseUrl()));
-    }
-
-    protected void createS3Bucket() throws ExecutionException, InterruptedException {
-        CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
-                .bucket("family-recipes.food-service")
-                .acl(BucketCannedACL.PRIVATE)
-                .build();
-        Mono.fromCompletionStage(s3Client.createBucket(createBucketRequest))
-                .as(StepVerifier::create)
-                .expectNextMatches(response -> response.sdkHttpResponse().isSuccessful())
-                .verifyComplete();
-        log.info("List of S3 buckets: {}", s3Client.listBuckets().get().buckets());
     }
 }

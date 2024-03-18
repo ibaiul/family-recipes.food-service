@@ -6,7 +6,6 @@ import eus.ibai.family.recipes.food.wm.infrastructure.file.S3FileStorage;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,13 +16,14 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import static eus.ibai.family.recipes.food.test.FileTestUtils.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -62,15 +63,8 @@ class FileStorageIT {
         meterRegistry = new SimpleMeterRegistry();
         S3Properties s3Properties = new S3Properties(localstack.getEndpoint().toASCIIString(), localstack.getRegion(), localstack.getAccessKey(), localstack.getSecretKey());
         s3Client = spy(new AwsConfig().s3client(s3Properties));
-        fileStorage = new S3FileStorage(s3Client, "bucket", meterRegistry);
-        CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
-                .bucket("bucket")
-                .acl(BucketCannedACL.PRIVATE)
-                .build();
-        Mono.fromCompletionStage(s3Client.createBucket(createBucketRequest))
-                .as(StepVerifier::create)
-                .expectNextMatches(response -> response.sdkHttpResponse().isSuccessful())
-                .verifyComplete();
+        fileStorage = new S3FileStorage(s3Client, TEST_BUCKET, meterRegistry);
+        createS3Bucket(s3Client);
     }
 
     @Test
@@ -85,16 +79,7 @@ class FileStorageIT {
                 .consumeNextWith(fileId::set)
                 .verifyComplete();
 
-        retrieveFile(fileId.get())
-                .as(StepVerifier::create)
-                .assertNext(file -> {
-                    assertThat(file.fileName()).isEqualTo(fileId.get());
-                    assertThat(file.contentType()).isEqualTo("image/png");
-                    assertThat(file.contentLength()).isEqualTo(data.length);
-                    assertThat(file.metadata()).containsExactlyInAnyOrderEntriesOf(fileMetadata);
-                })
-                .verifyComplete();
-
+        verifyStoredRecipeImage(s3Client, fileId.get(), IMAGE_PNG_VALUE, data.length, fileMetadata);
         verifyUploadSucceededMetricRecorded(1);
     }
 
@@ -115,7 +100,7 @@ class FileStorageIT {
 
     @Test
     void should_delete_file() {
-        String imageId = storeFile();
+        String imageId = storeRecipeImage(s3Client);
 
         fileStorage.deleteFile("recipes/images/" + imageId)
                 .as(StepVerifier::create)
@@ -175,49 +160,4 @@ class FileStorageIT {
             assertThat(metric.count()).isEqualTo(expected);
         });
     }
-
-    public Mono<File> retrieveFile(String fileKey) {
-        GetObjectRequest request = GetObjectRequest.builder()
-                .bucket("bucket")
-                .key("recipes/images/" + fileKey)
-                .build();
-
-        return Mono.fromFuture(s3Client.getObject(request, AsyncResponseTransformer.toBytes()))
-                .flatMap(response -> {
-                    if (response.response().sdkHttpResponse() == null || !response.response().sdkHttpResponse().isSuccessful()) {
-                        return Mono.error(new IOException("Failed to download file: " + response.response().sdkHttpResponse()));
-                    }
-                    String filename = getMetadataItem(response.response(),"filename", fileKey);
-                    String contentType = response.response().contentType();
-                    Long contentLength = response.response().contentLength();
-                    File file = new File(filename, contentType, contentLength, response.asByteBuffer(), response.response().metadata());
-                    return Mono.just(file);
-                });
-    }
-
-    @SneakyThrows
-    public String storeFile() {
-        byte[] data = Files.readAllBytes(Paths.get("src/test/resources/images/albondigas.png"));
-        ByteBuffer fileContent = ByteBuffer.wrap(data);
-        Map<String, String> fileMetadata = Map.of("entity", "recipe", "entityid", "entityId");
-
-        AtomicReference<String> fileId = new AtomicReference<>();
-        fileStorage.storeFile("recipes/images/", IMAGE_PNG_VALUE, data.length, Flux.just(fileContent), fileMetadata)
-                .as(StepVerifier::create)
-                .consumeNextWith(fileId::set)
-                .verifyComplete();
-
-        return fileId.get();
-    }
-
-    private String getMetadataItem(GetObjectResponse sdkResponse, String key, String defaultValue) {
-        for (Map.Entry<String, String> entry : sdkResponse.metadata().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(key)) {
-                return entry.getValue();
-            }
-        }
-        return defaultValue;
-    }
-
-    record File(String fileName, String contentType, long contentLength, ByteBuffer content, Map<String, String> metadata) {}
 }

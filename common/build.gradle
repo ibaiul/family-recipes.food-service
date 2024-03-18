@@ -10,7 +10,12 @@ dependencies {
     implementation "org.springframework:spring-jdbc:$springVersion"
     implementation "org.axonframework:axon-messaging:$axonVersion"
 
+    testFixturesAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testFixturesCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+
     testFixturesImplementation "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
+    testFixturesImplementation "software.amazon.awssdk:s3:${awsSdkVersion}"
+    testFixturesImplementation "software.amazon.awssdk:netty-nio-client:${awsSdkVersion}"
     testFixturesImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion") {
         exclude group: "com.vaadin.external.google", module:"android-json"
     }

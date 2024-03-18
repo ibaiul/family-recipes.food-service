@@ -25,6 +25,17 @@ spring:
     locations: classpath:db/migration/query/common,classpath:db/migration/query/{vendor}
     locations-command-db: classpath:db/migration/command/common,classpath:db/migration/command/{vendor}
 
+recipes:
+  images:
+    storagePath: recipes/images/
+
+s3:
+  endpoint: http://localhost:4567
+  region: us-east-2
+  bucket: test-bucket
+  accessKey: test
+  secretKey: test
+
 axon:
   serializer:
     general: jackson

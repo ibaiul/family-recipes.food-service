@@ -14,12 +14,15 @@ dependencies {
 
     implementation "org.springframework.boot:spring-boot-starter-data-r2dbc:$springBootVersion"
     runtimeOnly "org.postgresql:r2dbc-postgresql:$postgresqlR2dbcVersion"
+    implementation "software.amazon.awssdk:s3:${awsSdkVersion}"
+    implementation "software.amazon.awssdk:netty-nio-client:${awsSdkVersion}"
 
     testImplementation(testFixtures(project(":common")))
 
     implementation "org.axonframework:axon-test:$axonVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
+    testImplementation "org.testcontainers:localstack:$testcontainersVersion"
     testImplementation "io.r2dbc:r2dbc-h2:$h2R2dbcVersion"
     testImplementation "com.h2database:h2:$h2Version"
 

@@ -26,6 +26,8 @@ public class RecipeEntity {
 
     private Set<String> tags;
 
+    private Set<String> images;
+
     public RecipeEntity(String id, String name) {
         this(id, name, null);
     }
@@ -54,6 +56,19 @@ public class RecipeEntity {
 
     public RecipeEntity removeTag(String tag) {
         tags.remove(tag);
+        return this;
+    }
+
+    public RecipeEntity addImage(String imageId) {
+        if (images == null) {
+            images = new HashSet<>();
+        }
+        images.add(imageId);
+        return this;
+    }
+
+    public RecipeEntity removeImage(String tag) {
+        images.remove(tag);
         return this;
     }
 }

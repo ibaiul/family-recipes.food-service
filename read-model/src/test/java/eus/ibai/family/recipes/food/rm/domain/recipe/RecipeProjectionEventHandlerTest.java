@@ -111,4 +111,32 @@ class RecipeProjectionEventHandlerTest {
 
         verify(recipeRepository).save(expectedEntity);
     }
+
+    @Test
+    void should_add_recipe_image_when_recipe_image_added_event_received() {
+        RecipeImageAddedEvent event = new RecipeImageAddedEvent(generateId(), "imageId");
+        RecipeEntity initialEntity = new RecipeEntity(event.aggregateId(), "Pasta carbonara");
+        RecipeEntity expectedEntity = new RecipeEntity(event.aggregateId(), initialEntity.getName(), initialEntity.getLinks())
+                .addImage(event.imageId());
+        when(recipeRepository.findById(event.aggregateId())).thenReturn(Mono.just(initialEntity));
+
+        recipeProjectionEventHandler.on(event);
+
+        verify(recipeRepository).save(expectedEntity);
+    }
+
+    @Test
+    void should_remove_recipe_image_when_recipe_image_removed_event_received() {
+        RecipeImageRemovedEvent event = new RecipeImageRemovedEvent(generateId(), "imageId");
+        RecipeEntity initialEntity = new RecipeEntity(event.aggregateId(), "Pasta carbonara")
+                .addImage(event.imageId())
+                .addImage("imageId2");
+        RecipeEntity expectedEntity = new RecipeEntity(event.aggregateId(), initialEntity.getName())
+                .addImage("imageId2");
+        when(recipeRepository.findById(event.aggregateId())).thenReturn(Mono.just(initialEntity));
+
+        recipeProjectionEventHandler.on(event);
+
+        verify(recipeRepository).save(expectedEntity);
+    }
 }

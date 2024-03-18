@@ -6,6 +6,9 @@ spring:
   flyway:
     url: jdbc:postgresql://db:5432/local-query-db
 
+s3:
+  endpoint: http://localstack:4567
+
 newrelic:
   enabled: false
   metrics:

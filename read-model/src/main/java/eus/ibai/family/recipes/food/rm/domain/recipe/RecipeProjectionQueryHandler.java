@@ -75,6 +75,8 @@ class RecipeProjectionQueryHandler {
                 .orElseGet(HashSet::new);
         Set<String> tags = Optional.ofNullable(recipeEntity.getTags())
                 .orElseGet(HashSet::new);
-        return new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), links, recipeIngredients, tags);
+        Set<String> images = Optional.ofNullable(recipeEntity.getImages())
+                .orElseGet(HashSet::new);
+        return new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), links, recipeIngredients, tags, images);
     }
 }
