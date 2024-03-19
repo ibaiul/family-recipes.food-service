@@ -37,7 +37,7 @@ import static org.springframework.http.MediaType.*;
 class RecipeServiceTest {
 
     private static final RecipeProperties recipeProperties = RecipeProperties.builder()
-            .images(new RecipeProperties.ImageProperties("recipes/images/", Set.of("image/png"), 10240, 2048000))
+            .images(new RecipeProperties.ImageProperties("recipes/images/", Set.of("image/png"), 10240, 20480000))
             .build();
     @Captor
     private ArgumentCaptor<CreateRecipeCommand> sentCreateRecipeCommand;
@@ -356,8 +356,8 @@ class RecipeServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {-1, 0, 1024})
-    void should_not_add_image_when_content_length_too_small(long contentLength) {
+    @ValueSource(longs = {-1, 0, 1024, 20480001})
+    void should_not_add_image_when_content_length_is_invalid(long contentLength) {
         recipeService.addRecipeImage("recipeId", IMAGE_PNG_VALUE, contentLength, Flux.just(ByteBuffer.allocate(0)))
                 .as(StepVerifier::create)
                 .verifyError(InvalidFileException.class);
