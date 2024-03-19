@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import static eus.ibai.family.recipes.food.rm.infrastructure.config.AxonConfig.RECIPE_TAG_METRICS_EVENT_PROCESSOR;
 import static eus.ibai.family.recipes.food.test.TestUtils.execute;
@@ -24,6 +26,9 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 @SpringBootTest(webEnvironment = NONE)
 class RecipeTagsStatsRecorderIT {
+
+    @MockBean
+    private S3AsyncClient s3Client;
 
     @Value("${axon.eventhandling.custom-processors.recipe-tag-metrics-event-processor.event-availability-timeout-seconds}")
     private int eventAvailabilityTimeout;

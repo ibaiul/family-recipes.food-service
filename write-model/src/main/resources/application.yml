@@ -47,7 +47,7 @@ recipes:
       - image/png
       - image/jpeg
     minSize: 102400
-    maxSize: 2048000
+    maxSize: 20480000
 
 s3:
   endpoint: http://localhost:4567

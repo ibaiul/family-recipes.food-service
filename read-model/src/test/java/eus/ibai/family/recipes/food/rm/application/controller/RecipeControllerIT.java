@@ -1,7 +1,10 @@
 package eus.ibai.family.recipes.food.rm.application.controller;
 
 import eus.ibai.family.recipes.food.exception.RecipeNotFoundException;
+import eus.ibai.family.recipes.food.file.StorageFile;
+import eus.ibai.family.recipes.food.rm.domain.file.FileStorage;
 import eus.ibai.family.recipes.food.rm.domain.recipe.*;
+import eus.ibai.family.recipes.food.rm.infrastructure.config.RecipeProperties;
 import eus.ibai.family.recipes.food.rm.infrastructure.config.SecurityConfig;
 import eus.ibai.family.recipes.food.security.*;
 import org.axonframework.extensions.reactor.queryhandling.gateway.ReactorQueryGateway;
@@ -17,8 +20,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import software.amazon.awssdk.http.HttpStatusCode;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -26,15 +35,20 @@ import java.util.stream.Stream;
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static eus.ibai.family.recipes.food.test.TestUtils.fixedTime;
 import static eus.ibai.family.recipes.food.util.Utils.generateId;
+import static java.util.Collections.emptySet;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 @WebFluxTest(controllers = {RecipeController.class, AuthController.class})
-@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, UserProperties.class, ServiceProperties.class})
+@Import({GlobalSecurityConfig.class, SecurityConfig.class, JwtService.class, JwtProperties.class, RecipeProperties.class, UserProperties.class, ServiceProperties.class})
 class RecipeControllerIT {
 
     @MockBean
     private ReactorQueryGateway queryGateway;
+
+    @MockBean
+    private FileStorage fileStorage;
     
     @Autowired
     private WebTestClient webTestClient;
@@ -50,8 +64,9 @@ class RecipeControllerIT {
     void should_retrieve_recipe() {
         Set<String> links = Set.of("https://lentils.com", "https://chorizo.com");
         Set<String> tags = Set.of("First course", "Spanish cuisine");
+        Set<String> images = Set.of(generateId(), generateId());
         RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils with chorizo", links,
-                Set.of(new RecipeIngredientProjection("ingredientId", "Lentils", fixedTime())), tags);
+                Set.of(new RecipeIngredientProjection("ingredientId", "Lentils", fixedTime())), tags, images);
         when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
 
         webTestClient.get()
@@ -67,14 +82,15 @@ class RecipeControllerIT {
                 .jsonPath("$.ingredients[0].name").isEqualTo("Lentils")
                 .jsonPath("$.ingredients[0].addedOn").isEqualTo("1970-01-01T00:00:00.000")
                 .jsonPath("$.links").value(containsInAnyOrder(links.toArray()))
-                .jsonPath("$.tags").value(containsInAnyOrder(tags.toArray()));
+                .jsonPath("$.tags").value(containsInAnyOrder(tags.toArray()))
+                .jsonPath("$.images").value(containsInAnyOrder(images.toArray()));
     }
 
     @Test
     void should_serialize_recipe_ingredient_date_with_three_digit_millis() {
         String expectedDateTimeFormat = "2023-04-14T22:39:00.200";
         RecipeProjection recipe = new RecipeProjection(generateId(), "Lentils with chorizo", Set.of("https://lentils.com"),
-                Set.of(new RecipeIngredientProjection(generateId(), "Lentils", LocalDateTime.parse(expectedDateTimeFormat))), Set.of("First course"));
+                Set.of(new RecipeIngredientProjection(generateId(), "Lentils", LocalDateTime.parse(expectedDateTimeFormat))), Set.of("First course"), emptySet());
         when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
 
         webTestClient.get()
@@ -109,10 +125,7 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_all_recipes() {
-        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(generateId(), "Beans", fixedTime()));
-        List<RecipeProjection> recipes = List.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        List<RecipeProjection> recipes = createRecipeProjections();
         when(queryGateway.streamingQuery(new FindRecipesByQuery(null, null, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
@@ -137,11 +150,8 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_recipes_by_ingredient_id() {
-        String ingredientId = generateId();
-        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(ingredientId, "Beans", fixedTime()));
-        List<RecipeProjection> recipes = List.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        List<RecipeProjection> recipes = createRecipeProjections();
+        String ingredientId = recipes.get(0).ingredients().iterator().next().id();
         when(queryGateway.streamingQuery(new FindRecipesByQuery(ingredientId, null, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
@@ -166,10 +176,7 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_recipes_by_property_id() {
-        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(generateId(), "Beans", fixedTime()));
-        List<RecipeProjection> recipes = List.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        List<RecipeProjection> recipes = createRecipeProjections();
         String propertyId = generateId();
         when(queryGateway.streamingQuery(new FindRecipesByQuery(null, propertyId, null), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
@@ -195,10 +202,7 @@ class RecipeControllerIT {
 
     @Test
     void should_retrieve_recipes_by_tag() {
-        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection("ingredientId", "Beans", fixedTime()));
-        List<RecipeProjection> recipes = List.of(
-                new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course")),
-                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course")));
+        List<RecipeProjection> recipes = createRecipeProjections();
         when(queryGateway.streamingQuery(new FindRecipesByQuery(null, null, "First course"), RecipeProjection.class)).thenReturn(Flux.fromIterable(recipes));
 
         webTestClient.get()
@@ -250,5 +254,90 @@ class RecipeControllerIT {
                 .jsonPath("$[0].name").isEqualTo(recipeTags.get(0))
                 .jsonPath("$[1].name").isEqualTo(recipeTags.get(1))
                 .jsonPath("$[2]").doesNotHaveJsonPath();
+    }
+
+    @Test
+    void should_download_recipe_image() {
+        RecipeProjection recipe = createRecipeProjection();
+        String imageId = recipe.images().iterator().next();
+        when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
+        byte[] fileContent = "foo".getBytes();
+        String fileKey = "recipes/images/" + imageId;
+        when(fileStorage.retrieveFile(fileKey)).thenReturn(Mono.just(new StorageFile(fileKey, IMAGE_PNG_VALUE, 1, ByteBuffer.wrap(fileContent), Collections.emptyMap())));
+
+        webTestClient.get()
+                .uri("/recipes/%s/images/%s".formatted(recipe.id(), imageId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.IMAGE_PNG)
+                .expectHeader().contentLength(fileContent.length)
+                .expectBody(ByteBuffer.class);
+    }
+
+    @Test
+    void should_not_download_recipe_image_when_recipe_does_not_exist() {
+        String recipeId = generateId();
+        when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipeId), RecipeProjection.class)).thenReturn(Flux.error(new RecipeNotFoundException("")));
+
+        webTestClient.get()
+                .uri("/recipes/%s/image/%s".formatted(recipeId, generateId()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_download_recipe_image_when_does_not_exist() {
+        RecipeProjection recipe = createRecipeProjection();
+        when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
+
+        webTestClient.get()
+                .uri("/recipes/%s/images/%s".formatted(recipe.id(), generateId()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_download_recipe_image_when_not_found_in_storage() {
+        RecipeProjection recipe = createRecipeProjection();
+        String imageId = recipe.images().iterator().next();
+        when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
+        when(fileStorage.retrieveFile("recipes/images/" + imageId)).thenReturn(Mono.error(new FileNotFoundException()));
+
+        webTestClient.get()
+                .uri("/recipes/%s/images/%s".formatted(recipe.id(), imageId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_not_download_recipe_image_when_cannot_retrieve_from_storage() {
+        RecipeProjection recipe = createRecipeProjection();
+        String imageId = recipe.images().iterator().next();
+        when(queryGateway.streamingQuery(new FindRecipeByIdQuery(recipe.id()), RecipeProjection.class)).thenReturn(Flux.just(recipe));
+        when(fileStorage.retrieveFile("recipes/images/" + imageId)).thenReturn(Mono.error(new IOException()));
+
+        webTestClient.get()
+                .uri("/recipes/%s/images/%s".formatted(recipe.id(), imageId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatusCode.INTERNAL_SERVER_ERROR);
+    }
+
+    private List<RecipeProjection> createRecipeProjections() {
+        Set<RecipeIngredientProjection> ingredients = Set.of(new RecipeIngredientProjection(generateId(), "Beans", fixedTime()));
+        return List.of(new RecipeProjection(generateId(), "Black beans", Set.of("https://black.beans.com"), ingredients, Set.of("First course"), Set.of(generateId())),
+                new RecipeProjection(generateId(), "Green beans", Set.of("https://green.beans.com"), ingredients, Set.of("First course"), Set.of(generateId())));
+    }
+
+    private RecipeProjection createRecipeProjection() {
+        Set<String> links = Set.of("https://lentils.com", "https://chorizo.com");
+        Set<String> tags = Set.of("First course", "Spanish cuisine");
+        String imageId = generateId();
+        Set<String> images = Set.of(imageId, generateId());
+        return new RecipeProjection(generateId(), "Lentils with chorizo", links, Set.of(new RecipeIngredientProjection("ingredientId", "Lentils", fixedTime())), tags, images);
     }
 }

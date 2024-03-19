@@ -16,9 +16,9 @@ import org.springframework.web.reactive.function.BodyInserters;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static eus.ibai.family.recipes.food.test.FileTestUtils.createS3Bucket;
 import static eus.ibai.family.recipes.food.test.TestUtils.UUID_PATTERN_STRING;
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static java.lang.String.format;
@@ -33,8 +33,8 @@ class UserJourneyTest extends AcceptanceTest {
     private ApplicationContext applicationContext;
 
     @BeforeEach
-    void beforeEach() throws ExecutionException, InterruptedException {
-        createS3Bucket();
+    void beforeEach() {
+        createS3Bucket(s3Client);
         webTestClient = WebTestClient.bindToApplicationContext(applicationContext).build();
         bearerToken = authenticate(webTestClient).accessToken();
     }

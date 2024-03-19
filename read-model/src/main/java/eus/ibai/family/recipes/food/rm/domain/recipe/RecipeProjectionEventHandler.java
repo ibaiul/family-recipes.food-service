@@ -54,6 +54,7 @@ class RecipeProjectionEventHandler {
         recipeIngredientEntityRepository.saveNew(event.aggregateId(), event.recipeIngredient().ingredientId(), event.recipeIngredient().addedOn())
                 .subscribe();
     }
+
     @EventHandler
     void on(RecipeIngredientRemovedEvent event) {
         logEvent(event);
@@ -75,6 +76,24 @@ class RecipeProjectionEventHandler {
         logEvent(event);
         recipeEntityRepository.findById(event.aggregateId())
                 .map(recipeEntity -> recipeEntity.removeTag(event.recipeTag()))
+                .flatMap(recipeEntityRepository::save)
+                .subscribe();
+    }
+
+    @EventHandler
+    void on(RecipeImageAddedEvent event) {
+        logEvent(event);
+        recipeEntityRepository.findById(event.aggregateId())
+                .map(recipeEntity -> recipeEntity.addImage(event.imageId()))
+                .flatMap(recipeEntityRepository::save)
+                .subscribe();
+    }
+
+    @EventHandler
+    void on(RecipeImageRemovedEvent event) {
+        logEvent(event);
+        recipeEntityRepository.findById(event.aggregateId())
+                .map(recipeEntity -> recipeEntity.removeImage(event.imageId()))
                 .flatMap(recipeEntityRepository::save)
                 .subscribe();
     }

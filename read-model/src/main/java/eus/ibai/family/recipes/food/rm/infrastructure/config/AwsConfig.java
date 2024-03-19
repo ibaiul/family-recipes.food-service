@@ -1,4 +1,4 @@
-package eus.ibai.family.recipes.food.wm.infrastructure.config;
+package eus.ibai.family.recipes.food.rm.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

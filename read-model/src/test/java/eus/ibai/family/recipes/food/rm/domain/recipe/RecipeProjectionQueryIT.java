@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import reactor.test.StepVerifier;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.util.Collections;
 import java.util.Set;
@@ -25,6 +27,9 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = NONE)
 @ExtendWith(DataCleanupExtension.class)
 class RecipeProjectionQueryIT {
+
+    @MockBean
+    private S3AsyncClient s3Client;
 
     @Autowired
     private ReactorQueryGateway queryGateway;
@@ -77,9 +82,9 @@ class RecipeProjectionQueryIT {
         queryGateway.streamingQuery(new FindRecipesByQuery(null, null, null), RecipeProjection.class)
                 .as(StepVerifier::create)
                 .expectNext(new RecipeProjection[]{
-                        new RecipeProjection(recipe2.id(), recipe2.name(), recipe2.links(), Collections.emptySet(), recipe2.tags()),
-                        new RecipeProjection(recipe1.id(), recipe1.name(), recipe1.links(), Collections.emptySet(), recipe1.tags()),
-                        new RecipeProjection(recipe3.id(), recipe3.name(), recipe3.links(), Collections.emptySet(), recipe3.tags()),
+                        new RecipeProjection(recipe2.id(), recipe2.name(), recipe2.links(), Collections.emptySet(), recipe2.tags(), recipe2.images()),
+                        new RecipeProjection(recipe1.id(), recipe1.name(), recipe1.links(), Collections.emptySet(), recipe1.tags(), recipe1.images()),
+                        new RecipeProjection(recipe3.id(), recipe3.name(), recipe3.links(), Collections.emptySet(), recipe3.tags(), recipe3.images()),
                 })
                 .verifyComplete();
     }
@@ -88,7 +93,7 @@ class RecipeProjectionQueryIT {
     void should_find_all_containing_ingredient() {
         queryGateway.streamingQuery(new FindRecipesByQuery(recipe1.ingredients().iterator().next().id(), null, null), RecipeProjection.class)
                 .as(StepVerifier::create)
-                .expectNext(new RecipeProjection(recipe1.id(), recipe1.name(), recipe1.links(), Collections.emptySet(), recipe1.tags()))
+                .expectNext(new RecipeProjection(recipe1.id(), recipe1.name(), recipe1.links(), Collections.emptySet(), recipe1.tags(), recipe1.images()))
                 .verifyComplete();
     }
 
@@ -96,7 +101,7 @@ class RecipeProjectionQueryIT {
     void should_find_all_containing_property() {
         queryGateway.streamingQuery(new FindRecipesByQuery(null, propertyId, null), RecipeProjection.class)
                 .as(StepVerifier::create)
-                .expectNext(new RecipeProjection(recipe2.id(), recipe2.name(), recipe2.links(), Collections.emptySet(), recipe2.tags()))
+                .expectNext(new RecipeProjection(recipe2.id(), recipe2.name(), recipe2.links(), Collections.emptySet(), recipe2.tags(), recipe2.images()))
                 .verifyComplete();
     }
 
@@ -116,7 +121,7 @@ class RecipeProjectionQueryIT {
     void should_find_all_containing_tag() {
         queryGateway.streamingQuery(new FindRecipesByQuery(null, null, "Main course"), RecipeProjection.class)
                 .as(StepVerifier::create)
-                .expectNext(new RecipeProjection(recipe3.id(), recipe3.name(), recipe3.links(), Collections.emptySet(), recipe3.tags()))
+                .expectNext(new RecipeProjection(recipe3.id(), recipe3.name(), recipe3.links(), Collections.emptySet(), recipe3.tags(), recipe3.images()))
                 .verifyComplete();
     }
 
@@ -125,7 +130,8 @@ class RecipeProjectionQueryIT {
         propertyId = propertyEntity.getId();
         IngredientEntity ingredientEntity = new IngredientEntity(generateId(), "Spaghetti");
         RecipeEntity recipeEntity = new RecipeEntity(generateId(), "Pasta carbonara", Set.of("https://pasta.com"))
-                .addTag("First course");
+                .addTag("First course")
+                .addImage("pastaCarbonaraImage");
         recipe2 = recipeRepository.saveNew(recipeEntity.getId(), recipeEntity.getName())
                 .then(recipeRepository.save(recipeEntity))
                 .then(ingredientRepository.saveNew(ingredientEntity.getId(), ingredientEntity.getName()))
@@ -133,26 +139,28 @@ class RecipeProjectionQueryIT {
                 .then(ingredientPropertyRepository.saveNew(ingredientEntity.getId(), propertyEntity.getId(), fixedTime()))
                 .then(recipeIngredientRepository.saveNew(recipeEntity.getId(), ingredientEntity.getId(), fixedTime()))
                 .thenReturn(new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), recipeEntity.getLinks(),
-                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags()))
+                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags(), recipeEntity.getImages()))
                 .block();
 
         ingredientEntity = new IngredientEntity(generateId(), "Rice");
         recipeEntity = new RecipeEntity(generateId(), "Vietnamese style rice", Set.of("https://rice.com"))
-                .addTag("First course");
+                .addTag("First course")
+                .addImage("vietnameseRiceImage");
         recipe1 = recipeRepository.saveNew(recipeEntity.getId(), recipeEntity.getName())
                 .then(recipeRepository.save(recipeEntity))
                 .then(ingredientRepository.saveNew(ingredientEntity.getId(), ingredientEntity.getName()))
                 .then(recipeIngredientRepository.saveNew(recipeEntity.getId(), ingredientEntity.getId(), fixedTime()))
                 .thenReturn(new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), recipeEntity.getLinks(),
-                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags()))
+                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags(), recipeEntity.getImages()))
                 .block();
 
         recipeEntity = new RecipeEntity(generateId(), "Pil-pil style cod", Set.of("https://cod.com"))
-                .addTag("Main course");
+                .addTag("Main course")
+                .addImage("pilPilImage");
         recipe3 = recipeRepository.saveNew(recipeEntity.getId(), recipeEntity.getName())
                 .then(recipeRepository.save(recipeEntity))
                 .thenReturn(new RecipeProjection(recipeEntity.getId(), recipeEntity.getName(), recipeEntity.getLinks(),
-                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags()))
+                        Set.of(new RecipeIngredientProjection(ingredientEntity.getId(), ingredientEntity.getName(), fixedTime())), recipeEntity.getTags(), recipeEntity.getImages()))
                 .block();
     }
 }

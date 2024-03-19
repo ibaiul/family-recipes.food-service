@@ -11,13 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import reactor.test.StepVerifier;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static eus.ibai.family.recipes.food.test.FileTestUtils.TEST_BUCKET;
 import static eus.ibai.family.recipes.food.test.TestUtils.stubNewRelicSendMetricResponse;
 import static java.lang.String.format;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 @Slf4j
 @Testcontainers
@@ -31,11 +36,18 @@ public abstract class AcceptanceTest {
             .withInitScript("db/acceptance-test-db-init-script.sql")
             .withReuse(true);
 
+    @Container
+    private static final LocalStackContainer localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.2.0"))
+            .withServices(S3);
+
     @RegisterExtension
     private static final WireMockExtension wiremock = WireMockExtension.newInstance()
             .options(wireMockConfig().dynamicPort())
             .configureStaticDsl(true)
             .build();
+
+    @Autowired
+    protected S3AsyncClient s3Client;
 
     @Autowired
     protected RecipeEntityRepository recipeEntityRepository;
@@ -75,6 +87,11 @@ public abstract class AcceptanceTest {
         registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
         registry.add("spring.r2dbc.url", () -> postgreSqlContainer.getJdbcUrl().replace(defaultDatabaseName, "acceptance-query-db").replace("jdbc", "r2dbc"));
         registry.add("spring.flyway.url", () -> postgreSqlContainer.getJdbcUrl().replace(defaultDatabaseName, "acceptance-query-db"));
+        registry.add("s3.endpoint", localstack::getEndpoint);
+        registry.add("s3.region", localstack::getRegion);
+        registry.add("s3.accessKey", localstack::getAccessKey);
+        registry.add("s3.secretKey", localstack::getSecretKey);
+        registry.add("s3.bucket", () -> TEST_BUCKET);
         registry.add("newrelic.enabled", () -> "true");
         registry.add("newrelic.metrics.ingest-uri", () -> format("%s/metric/v1", wiremock.baseUrl()));
     }

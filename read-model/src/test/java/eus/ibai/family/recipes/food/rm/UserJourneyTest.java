@@ -3,20 +3,25 @@ package eus.ibai.family.recipes.food.rm;
 import eus.ibai.family.recipes.food.rm.application.dto.*;
 import eus.ibai.family.recipes.food.rm.infrastructure.model.RecipeEntity;
 import eus.ibai.family.recipes.food.rm.test.AcceptanceTest;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static eus.ibai.family.recipes.food.test.FileTestUtils.*;
 import static eus.ibai.family.recipes.food.test.TestUtils.authenticate;
 import static eus.ibai.family.recipes.food.test.TestUtils.fixedTime;
 import static eus.ibai.family.recipes.food.util.Utils.generateId;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 class UserJourneyTest extends AcceptanceTest {
 
@@ -35,14 +40,23 @@ class UserJourneyTest extends AcceptanceTest {
 
     private Set<String> recipeTags;
 
+    private String imageId;
+
     @BeforeEach
     void beforeEach() {
+        createS3Bucket(s3Client);
+        imageId = storeRecipeImage(s3Client);
         recipes = new HashMap<>();
         ingredients = new HashMap<>();
         properties = new HashMap<>();
         recipeTags = new HashSet<>();
         createTestData();
-        webTestClient = WebTestClient.bindToApplicationContext(applicationContext).build();
+        webTestClient = WebTestClient.bindToApplicationContext(applicationContext)
+                .configureClient()
+                .exchangeStrategies(ExchangeStrategies.builder()
+                        .codecs(config ->  config.defaultCodecs().maxInMemorySize(50000))
+                        .build())
+                .build();
         bearerToken = authenticate(webTestClient).accessToken();
     }
 
@@ -54,6 +68,11 @@ class UserJourneyTest extends AcceptanceTest {
         getRecipesByPropertyId();
         getAllRecipeTags();
         getRecipesByTag();
+    }
+
+    @Test
+    void as_a_user_I_can_download_recipe_images() {
+        downloadRecipeImage();
     }
 
     @Test
@@ -86,7 +105,7 @@ class UserJourneyTest extends AcceptanceTest {
         BasicRecipeDto recipe = recipes.get("Pasta carbonara");
         BasicIngredientDto ingredient = ingredients.get("Spaghetti");
         RecipeDto expectedRecipe = new RecipeDto(recipe.id(), recipe.name(), Set.of("https://pasta.com"),
-                Set.of(new RecipeIngredientDto(ingredient.id(), ingredient.name(), fixedTime())), Set.of("Italian cuisine", "First course"));
+                Set.of(new RecipeIngredientDto(ingredient.id(), ingredient.name(), fixedTime())), Set.of("Italian cuisine", "First course"), Set.of(imageId));
 
         webTestClient.get()
                 .uri("/recipes/" + recipe.id())
@@ -217,12 +236,29 @@ class UserJourneyTest extends AcceptanceTest {
         assertThat(queryResult).containsExactlyInAnyOrderElementsOf(expectedRecipes);
     }
 
+    @SneakyThrows
+    private void downloadRecipeImage() {
+        BasicRecipeDto recipe = recipes.get("Pasta carbonara");
+
+        ByteBuffer fileContent = webTestClient.get()
+                .uri("/recipes/" + recipe.id() + "/images/" + imageId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Content-Type", IMAGE_PNG_VALUE)
+                .expectHeader().valueEquals("Content-Length", 24018)
+                .expectBody(ByteBuffer.class).returnResult().getResponseBody();
+
+        verifyDownloadedRecipeImage(fileContent);
+    }
+
     private void createTestData() {
         BasicRecipeDto recipeDto = new BasicRecipeDto(generateId(), "Pasta carbonara");
         recipeEntityRepository.saveNew(recipeDto.id(), recipeDto.name())
                 .thenReturn(new RecipeEntity(recipeDto.id(), recipeDto.name(), Set.of("https://pasta.com"))
                         .addTag("First course")
-                        .addTag("Italian cuisine"))
+                        .addTag("Italian cuisine")
+                        .addImage(imageId))
                 .flatMap(recipeEntityRepository::save).block();
         BasicIngredientDto ingredientDto = new BasicIngredientDto(generateId(), "Spaghetti");
         ingredientEntityRepository.saveNew(ingredientDto.id(), ingredientDto.name()).block();
